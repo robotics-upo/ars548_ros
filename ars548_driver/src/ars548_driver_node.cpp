@@ -1,0 +1,11 @@
+#include "rclcpp/rclcpp.hpp"
+#include "../include/ars548_driver/ars548_driver.hpp"
+
+int main(int argc,char* argv[]){
+    rclcpp::init(argc,argv);
+    rclcpp::spin(std::make_shared<ars548_driver>());
+    rclcpp::shutdown();
+    return 0;
+}
+
+

@@ -1,0 +1,10 @@
+<launch>
+    <node pkg="ars548_driver" exec="ars548_driver" name="radar">
+        <param name="radarIP" value="224.0.2.2"/>
+        <param name="radarPort" value="42102"/>
+        <param name="frameID" value="ARS_548"/>
+    </node>
+    
+    <node pkg="rviz2" exec="rviz2" name="Visualization" args="-d $(find-pkg-share ars548_driver)/rviz/RadarVisualization.rviz"/>
+    <node pkg="tf2_ros" exec="static_transform_publisher" args="0 0 0 0 0 0 PointCloud ARS_548"/>
+</launch>
