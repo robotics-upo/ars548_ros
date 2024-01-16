@@ -2,6 +2,8 @@ ARS_548_RDI Driver:
 ================
 Introduction:
 ---
+This is a ROS 2 driver for the Continental ARS_548 Radar4d created by the Service Robotics Lab from the Pablo de Olavide University (Spain).
+
 This driver is used to connect with the ARS_548_RDI radar  and get all of the data it sends.
 
 First of all, this driver connects with the radar via Ethernet.\
