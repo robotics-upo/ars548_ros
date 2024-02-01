@@ -4,7 +4,7 @@ Introduction:
 ---
 This is a ROS 2 driver for the Continental ARS_548 Radar4d created by the Service Robotics Lab from the Pablo de Olavide University (Spain).
 
-This driver is used to connect with the ARS_548_RDI radar  and get all of the data it sends.
+This driver is used to connect with the ARS_548_RDI radar and get all of the data it sends.
 
 First of all, this driver connects with the radar via Ethernet.\
 Then it receives all the data the radar sends, translates it, and after that, it sends it in the structure of custom messages for the user to receive and interact with them.
@@ -81,12 +81,12 @@ Firstly we will talk about the files inside the package ars548_driver, and next,
     
 Before Downloading the code:
 ---
-For the code to Work propperly you must first do this steps.
+For the code to Work properly you must first do this steps.
 
 - Have ros 2, rviz 2, tf2 and colcon installed.
 - Configure the Network connection with the radar.
 
-In this file, we are working with the **ROS 2 Humble** distribution on ubuntu 22, so all of the ROS 2 commands that we will be using are from this particular distribution. In case you use another ROS 2 distribution, this commands may change a bit.
+In this file, we are working with the **ROS 2 Humble** distribution on Ubuntu 22.04, so all of the ROS 2 commands that we will be using are from this particular distribution. In case you use another ROS 2 distribution, this commands may change a bit.
 
 * ### Install ROS 2:
     To install ROS 2 you can follow this tutorial: <https://docs.ros.org/en/humble/Installation.html>
@@ -115,7 +115,7 @@ In this file, we are working with the **ROS 2 Humble** distribution on ubuntu 22
     For being able to communicate with the radar and receive the data, you must first configure your network.\
     You can configure your network in two ways:
     
-    * #### Configure it mannually: 
+    * #### Configure it manually: 
 
         To do this you must follow the next steps:
 
@@ -137,7 +137,7 @@ In this file, we are working with the **ROS 2 Humble** distribution on ubuntu 22
         8. On the `IPv4 Settings` tab, in the **Method** field, select: **Manual** 
 
         9. On the `Addresses` field, click on **Add** and fill the new address with the next data:
-            + `Addres` field: **10.13.1.166**
+            + `Address` field: **10.13.1.166**
             + `Netmask` field: **24**
             + `Gateway` field: **10.13.1.1**
             ###### (This values are the default data for the radar, in case you have other, change the values so they match yours)
