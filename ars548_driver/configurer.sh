@@ -17,7 +17,7 @@ configurer(){
     fi
     echo "All configured!!"
 }
-#Tis function calls the nm-connection-editor so the user can create a virtual connection to the radar.
+#This function calls the nm-connection-editor so the user can create a virtual connection to the radar.
 configureConnection(){
     echo "Write your parent interface name"
     read parent

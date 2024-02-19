@@ -1,3 +1,9 @@
+/**
+ * @file ars548_driver.hpp
+ * 
+ * @brief ars548_driver is a class that is used to obtain all of the data from the sensor, translates it and sends it to the user for later use.
+ * It also copies part of the received data and sends it to Rviz for the visualization of the results. 
+ */
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -16,6 +22,9 @@
 #include "ars548_data.h"
 using namespace std::chrono_literals;
 
+/**
+ * @brief Data obtained from the RadarSensors_Annex_AES548_IO SW 05.48.04.pdf 
+ */
 #define DEFAULT_RADAR_IP "224.0.2.2"
 #define RADAR_INTERFACE "10.13.1.166"
 #define DEFAULT_RADAR_PORT 42102
@@ -32,7 +41,13 @@ using namespace std::chrono_literals;
 #define STATUS_MESSAGE_PAYLOAD 84
 #define OBJECT_MESSAGE_PAYLOAD 9401
 #define DETECTION_MESSAGE_PAYLOAD 35336
+/**
+ * @brief POINTCLOUD_HEIGHT = 1 because the pointcloud is unordered.
+ */
 #define POINTCLOUD_HEIGHT 1
+/**
+ * @brief This fields can be changed 
+ */
 #define POINTCLOUD_WIDTH 1000
 #define SIZE 1000
 
@@ -51,37 +66,409 @@ class ars548_driver : public rclcpp::Node{
     sensor_msgs::msg::PointCloud2 cloud_msgObj;
     sensor_msgs::msg::PointCloud2 cloud_msgDetect;
     geometry_msgs::msg::PoseArray cloud_Direction;
-    
+    /**
+     * @brief  Sends the data on socket fd to the address addr.
+     * 
+     * @tparam data The buffer with all of the data.
+     * @param fd The socket where you are going to send the data.
+     * @param addr The address where the data is going to be sent.
+     * @return nbytes. The number of bytes sent. If its value is -1 there has been an error.
+     */
     template<typename T>
     int SendMessage(int fd, T& data, sockaddr_in addr){
-    int nbytes=sendto(fd,&data,8+sizeof(data),0,(struct sockaddr *) &addr,sizeof(addr));
+        int nbytes=sendto(fd,&data,8+sizeof(data),0,(struct sockaddr *) &addr,sizeof(addr));
         return nbytes;
     }
-
+    /**
+     * @brief Changes the endianness of the object received 
+     * @tparam v The object to be modified.
+     * @return T. The object modified.
+     */
     template<typename T>
-    T ToLittleEndian(T v){
+    T ChangeEndianness(T v){
         T r;
         uint8_t *pv = (uint8_t *)&v, *pr = (uint8_t *)&r;
-        for (int i =0;i <int(sizeof(T)); i++){
+        for (int i = 0;i <int(sizeof(T)); i++){
             pr[i]=pv[sizeof(T)-1-i];
         }
         return r;
     }
-
-    template<typename T>
-    T ToBigEndian(T data){
-        T r;
-
-        uint8_t *pdata=(uint8_t *)&data, *pr=(uint8_t *)&r;
-        for (int i = 0; i < int(sizeof(T)); i++)
-        {
-            pr[i]=pdata[sizeof(T)-1-i];
-        }
-        return r;
-        
+    /**
+     * @brief Changes the Endiannes of the status struct. 
+     * 
+     * @param status The UDPStatus struct that is going to be modified.
+     * @return UDPStatus The modified struct. 
+     */
+    UDPStatus modifyStatus(UDPStatus status){
+        status.Timestamp_Nanoseconds=ChangeEndianness(status.Timestamp_Nanoseconds);
+        status.Timestamp_Seconds=ChangeEndianness(status.Timestamp_Seconds);
+        status.Longitudinal=ChangeEndianness(status.Longitudinal);
+        status.Lateral=ChangeEndianness(status.Lateral);
+        status.Vertical=ChangeEndianness(status.Vertical);
+        status.Yaw=ChangeEndianness(status.Yaw);
+        status.Pitch=ChangeEndianness(status.Pitch);
+        status.Length=ChangeEndianness(status.Length);
+        status.Width=ChangeEndianness(status.Width);
+        status.Height=ChangeEndianness(status.Height);
+        status.Wheelbase=ChangeEndianness(status.Wheelbase);
+        status.MaximunDistance=ChangeEndianness(status.MaximunDistance);
+        status.SensorIPAddress_0=ChangeEndianness(status.SensorIPAddress_0);
+        status.SensorIPAddress_1=ChangeEndianness(status.SensorIPAddress_1);
+        return status;
     }
-    //This function reads the data the radar is Sending to the computer, after that, it sends a fragment of the data to rviz2 for visualization.
-    // It also sends all the data in a few custom messages for personal use. 
+    /**
+     * @brief Changes the endiannes of the Object_List struct
+     *  
+     * @param object_List The Object_List struct that is going to be modified.
+     * @return Object_List The modified Struct.
+     */
+    Object_List modifyObjectList(Object_List object_List){
+        object_List.CRC=ChangeEndianness(object_List.CRC);
+        object_List.Length=ChangeEndianness(object_List.Length);
+        object_List.SQC=ChangeEndianness(object_List.SQC);
+        object_List.DataID=ChangeEndianness(object_List.DataID);
+        object_List.Timestamp_Nanoseconds=ChangeEndianness(object_List.Timestamp_Nanoseconds);
+        object_List.Timestamp_Seconds=ChangeEndianness(object_List.Timestamp_Seconds);
+        object_List.EventDataQualifier=ChangeEndianness(object_List.EventDataQualifier);
+        object_List.ObjectList_NumOfObjects=ChangeEndianness(object_List.ObjectList_NumOfObjects);
+        if (object_List.ObjectList_NumOfObjects>50){
+            object_List.ObjectList_NumOfObjects=50;
+        }
+        for(u_int32_t i =0; i<object_List.ObjectList_NumOfObjects;++i){
+            object_List.ObjectList_Objects[i].u_StatusSensor=ChangeEndianness(object_List.ObjectList_Objects[i].u_StatusSensor);
+            object_List.ObjectList_Objects[i].u_ID=ChangeEndianness(object_List.ObjectList_Objects[i].u_ID);
+            object_List.ObjectList_Objects[i].u_Age=ChangeEndianness(object_List.ObjectList_Objects[i].u_Age);
+            object_List.ObjectList_Objects[i].u_Position_InvalidFlags=ChangeEndianness(object_List.ObjectList_Objects[i].u_Position_InvalidFlags);
+            object_List.ObjectList_Objects[i].u_Position_X=ChangeEndianness(object_List.ObjectList_Objects[i].u_Position_X);
+            object_List.ObjectList_Objects[i].u_Position_X_STD=ChangeEndianness(object_List.ObjectList_Objects[i].u_Position_X_STD);
+            object_List.ObjectList_Objects[i].u_Position_Y=ChangeEndianness(object_List.ObjectList_Objects[i].u_Position_Y);
+            object_List.ObjectList_Objects[i].u_Position_Y_STD=ChangeEndianness(object_List.ObjectList_Objects[i].u_Position_Y_STD);
+            object_List.ObjectList_Objects[i].u_Position_Z=ChangeEndianness(object_List.ObjectList_Objects[i].u_Position_Z);
+            object_List.ObjectList_Objects[i].u_Position_Z_STD=ChangeEndianness(object_List.ObjectList_Objects[i].u_Position_Z_STD);
+            object_List.ObjectList_Objects[i].u_Position_CovarianceXY=ChangeEndianness(object_List.ObjectList_Objects[i].u_Position_CovarianceXY);
+            object_List.ObjectList_Objects[i].u_Position_Orientation=ChangeEndianness(object_List.ObjectList_Objects[i].u_Position_Orientation);
+            object_List.ObjectList_Objects[i].u_Position_Orientation_STD=ChangeEndianness(object_List.ObjectList_Objects[i].u_Position_Orientation_STD);
+            object_List.ObjectList_Objects[i].u_Existence_Probability=ChangeEndianness(object_List.ObjectList_Objects[i].u_Existence_Probability);
+            object_List.ObjectList_Objects[i].u_Existence_PPV=ChangeEndianness(object_List.ObjectList_Objects[i].u_Existence_PPV);
+            object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_X=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_X);
+            object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_X_STD=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_X_STD);
+            object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_Y=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_Y);
+            object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_Y_STD=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_Y_STD);
+            object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_CovarianceXY=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_CovarianceXY);
+            object_List.ObjectList_Objects[i].f_Dynamics_RelVel_X=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_RelVel_X);
+            object_List.ObjectList_Objects[i].f_Dynamics_RelVel_X_STD=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_RelVel_X_STD);
+            object_List.ObjectList_Objects[i].f_Dynamics_RelVel_Y=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_RelVel_Y);
+            object_List.ObjectList_Objects[i].f_Dynamics_RelVel_Y_STD=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_RelVel_Y_STD);
+            object_List.ObjectList_Objects[i].f_Dynamics_RelVel_CovarianceXY=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_RelVel_CovarianceXY);
+            object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_X=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_X);
+            object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_X_STD=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_X_STD);
+            object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_Y=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_Y);
+            object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_Y_STD=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_Y_STD);
+            object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_CovarianceXY=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_CovarianceXY);
+            object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_X=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_Y_STD);
+            object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_CovarianceXY=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_CovarianceXY);
+            object_List.ObjectList_Objects[i].u_Dynamics_Orientation_Rate_Mean=ChangeEndianness(object_List.ObjectList_Objects[i].u_Dynamics_Orientation_Rate_Mean);
+            object_List.ObjectList_Objects[i].u_Dynamics_Orientation_Rate_STD=ChangeEndianness(object_List.ObjectList_Objects[i].u_Dynamics_Orientation_Rate_STD);
+            object_List.ObjectList_Objects[i].u_Shape_Length_Status=ChangeEndianness(object_List.ObjectList_Objects[i].u_Shape_Length_Status);
+            object_List.ObjectList_Objects[i].u_Shape_Length_Edge_Mean=ChangeEndianness(object_List.ObjectList_Objects[i].u_Shape_Length_Edge_Mean);
+            object_List.ObjectList_Objects[i].u_Shape_Length_Edge_STD=ChangeEndianness(object_List.ObjectList_Objects[i].u_Shape_Length_Edge_STD);
+            object_List.ObjectList_Objects[i].u_Shape_Width_Status=ChangeEndianness(object_List.ObjectList_Objects[i].u_Shape_Width_Status);
+            object_List.ObjectList_Objects[i].u_Shape_Width_Edge_Mean=ChangeEndianness(object_List.ObjectList_Objects[i].u_Shape_Width_Edge_Mean);
+            object_List.ObjectList_Objects[i].u_Shape_Width_Edge_STD=ChangeEndianness(object_List.ObjectList_Objects[i].u_Shape_Width_Edge_STD);
+        }
+        return object_List;
+    }
+    /**
+     * @brief Changes the endianness of the DetectionList struct.
+     * 
+     * @param detectionList The DetectionList struct that is going to be modified.
+     * @return DetectionList The modified struct.
+     */
+    DetectionList modifyDetectionList(DetectionList detectionList){
+        detectionList.CRC=ChangeEndianness(detectionList.CRC);
+        detectionList.Length=ChangeEndianness(detectionList.Length);
+        detectionList.SQC=ChangeEndianness(detectionList.SQC);
+        detectionList.DataID=ChangeEndianness(detectionList.DataID);
+        detectionList.Timestamp_Nanoseconds=ChangeEndianness(detectionList.Timestamp_Nanoseconds);
+        detectionList.Timestamp_Seconds=ChangeEndianness(detectionList.Timestamp_Seconds);
+        detectionList.EventDataQualifier=ChangeEndianness(detectionList.EventDataQualifier);
+        detectionList.Origin_InvalidFlags=ChangeEndianness(detectionList.Origin_InvalidFlags);
+        detectionList.Origin_Xpos=ChangeEndianness(detectionList.Origin_Xpos);
+        detectionList.Origin_Xstd=ChangeEndianness(detectionList.Origin_Xstd);
+        detectionList.Origin_Ypos=ChangeEndianness(detectionList.Origin_Ypos);
+        detectionList.Origin_Ystd=ChangeEndianness(detectionList.Origin_Ystd);
+        detectionList.Origin_Zpos=ChangeEndianness(detectionList.Origin_Zpos);
+        detectionList.Origin_Zstd=ChangeEndianness(detectionList.Origin_Zstd);
+        detectionList.Origin_Roll=ChangeEndianness(detectionList.Origin_Roll);
+        detectionList.Origin_Rollstd=ChangeEndianness(detectionList.Origin_Rollstd);
+        detectionList.Origin_Pitch=ChangeEndianness(detectionList.Origin_Pitch);
+        detectionList.Origin_Pitchstd=ChangeEndianness(detectionList.Origin_Pitchstd);
+        detectionList.Origin_Yaw=ChangeEndianness(detectionList.Origin_Yaw);
+        detectionList.Origin_Yawstd=ChangeEndianness(detectionList.Origin_Yawstd);
+        detectionList.List_NumOfDetections=ChangeEndianness(detectionList.List_NumOfDetections);
+        detectionList.List_RadVelDomain_Min=ChangeEndianness(detectionList.List_RadVelDomain_Min);
+        detectionList.List_RadVelDomain_Max=ChangeEndianness(detectionList.List_RadVelDomain_Max);
+        detectionList.Aln_AzimuthCorrection=ChangeEndianness(detectionList.Aln_AzimuthCorrection);
+        detectionList.Aln_ElevationCorrection=ChangeEndianness(detectionList.Aln_ElevationCorrection);
+        for(uint64_t i=0; i<detectionList.List_NumOfDetections;i++){
+            //Setting the detection data to littleEndian
+            detectionList.List_Detections[i].f_AzimuthAngle=ChangeEndianness(detectionList.List_Detections[i].f_AzimuthAngle);
+            detectionList.List_Detections[i].f_AzimuthAngleSTD=ChangeEndianness(detectionList.List_Detections[i].f_AzimuthAngleSTD);
+            detectionList.List_Detections[i].f_ElevationAngle=ChangeEndianness(detectionList.List_Detections[i].f_ElevationAngle);
+            detectionList.List_Detections[i].f_ElevationAngleSTD=ChangeEndianness(detectionList.List_Detections[i].f_ElevationAngleSTD);
+            detectionList.List_Detections[i].f_Range=ChangeEndianness(detectionList.List_Detections[i].f_Range);
+            detectionList.List_Detections[i].f_RangeSTD=ChangeEndianness(detectionList.List_Detections[i].f_RangeSTD);
+            detectionList.List_Detections[i].f_RangeRate=ChangeEndianness(detectionList.List_Detections[i].f_RangeRate);
+            detectionList.List_Detections[i].f_RangeRateSTD=ChangeEndianness(detectionList.List_Detections[i].f_RangeRateSTD);
+            detectionList.List_Detections[i].u_MeasurementID=ChangeEndianness(detectionList.List_Detections[i].u_MeasurementID);
+            detectionList.List_Detections[i].u_ObjectID=ChangeEndianness(detectionList.List_Detections[i].u_ObjectID);
+            detectionList.List_Detections[i].u_SortIndex=ChangeEndianness(detectionList.List_Detections[i].u_SortIndex);
+        }
+        return detectionList;
+    }
+    /**
+     * @brief Fills the Status Messsage.
+     * 
+     * @param statusMessage The Status message to be filled.
+     * @param status The Status struct used to fill the message.
+     * @return Status.msg The message with all of its fields filled. 
+     */
+    ars548_messages::msg::Status fillStatusMessage(ars548_messages::msg::Status statusMessage, UDPStatus status){
+        statusMessage.cycletime=status.CycleTime;
+        statusMessage.configurationcounter=status.ConfigurationCounter;
+        statusMessage.frequencyslot=status.FrequencySlot;
+        statusMessage.hcc=status.HCC;
+        statusMessage.height=status.Height;
+        statusMessage.lateral=status.Lateral;
+        statusMessage.length=status.Length;
+        statusMessage.longitudinal=status.Longitudinal;
+        statusMessage.maximundistance=status.MaximunDistance;
+        statusMessage.pitch=status.Pitch;
+        statusMessage.plugorientation=status.PlugOrientation;
+        statusMessage.powersave_standstill=status.PayloadLength;
+        statusMessage.sensoripaddress_0=status.SensorIPAddress_0;
+        statusMessage.sensoripaddress_1=status.SensorIPAddress_1;
+        statusMessage.status_blockagestatus=status.Status_BlockageStatus;
+        statusMessage.status_characteristicspeed=status.Status_CharacteristicSpeed;
+        statusMessage.status_drivingdirection=status.Status_DrivingDirection;
+        statusMessage.status_lateralacceleration=status.Status_LateralAcceleration;
+        statusMessage.status_longitudinalacceleration=status.Status_LongitudinalAcceleration;
+        statusMessage.status_longitudinalvelocity=status.Status_LongitudinalVelocity;
+        statusMessage.status_radarstatus=status.Status_RadarStatus;
+        statusMessage.status_steeringangle=status.Status_SteeringAngle;
+        statusMessage.status_temperaturestatus=status.Status_TemperatureStatus;
+        statusMessage.status_voltagestatus=status.Status_VoltageStatus;
+        statusMessage.status_yawrate=status.Status_YawRate;
+        statusMessage.swversion_major=status.SWVersion_Major;
+        statusMessage.swversion_minor=status.SWVersion_Minor;
+        statusMessage.swversion_patch=status.SWVersion_Patch;
+        statusMessage.timeslot=status.TimeSlot;
+        statusMessage.timestamp_nanoseconds=status.Timestamp_Nanoseconds;
+        statusMessage.timestamp_seconds=status.Timestamp_Seconds;
+        statusMessage.timestamp_syncstatus=status.Timestamp_SyncStatus;
+        statusMessage.vertical=status.Vertical;
+        statusMessage.wheelbase=status.Wheelbase;
+        statusMessage.width=status.Width;
+        statusMessage.yaw=status.Yaw;
+        return statusMessage;
+    }
+    /**
+     * @brief Fills the ObjectList message.
+     * 
+     * @param objectMessage The object message to be filled.
+     * @param object_List The Object_List struct used to fill the message.
+     * @param clock The clock used to fill the timestamp of the message.
+     * @return ObjectList.msg The message with all of its fields filled.
+     */
+    ars548_messages::msg::ObjectList fillMessageObject(ars548_messages::msg::ObjectList objectMessage,Object_List object_List,rclcpp::Clock clock){
+        objectMessage.crc=object_List.CRC;
+        objectMessage.length=object_List.Length;
+        objectMessage.sqc=object_List.SQC;
+        objectMessage.timestamp_nanoseconds=object_List.Timestamp_Nanoseconds;
+        objectMessage.timestamp_seconds=object_List.Timestamp_Seconds;
+        objectMessage.eventdataqualifier=object_List.EventDataQualifier;
+        objectMessage.extendedqualifier=object_List.ExtendedQualifier;
+        objectMessage.dataid=object_List.DataID;
+        objectMessage.objectlist_numofobjects=object_List.ObjectList_NumOfObjects;
+        objectMessage.timestamp_syncstatus=object_List.Timestamp_SyncStatus;
+        
+        objectMessage.header.frame_id=this->frame_ID;
+        objectMessage.header.stamp=clock.now();
+        for(u_int32_t i =0; i<object_List.ObjectList_NumOfObjects;++i){
+            objectMessage.objectlist_objects[i].u_statussensor=object_List.ObjectList_Objects[i].u_StatusSensor;
+            objectMessage.objectlist_objects[i].u_id=object_List.ObjectList_Objects[i].u_ID;
+            objectMessage.objectlist_objects[i].u_age=object_List.ObjectList_Objects[i].u_Age;
+            objectMessage.objectlist_objects[i].u_position_invalidflags=object_List.ObjectList_Objects[i].u_Position_InvalidFlags;
+            objectMessage.objectlist_objects[i].u_position_x=object_List.ObjectList_Objects[i].u_Position_X;
+            objectMessage.objectlist_objects[i].u_position_x_std=object_List.ObjectList_Objects[i].u_Position_X_STD;
+            objectMessage.objectlist_objects[i].u_position_y=object_List.ObjectList_Objects[i].u_Position_Y;
+            objectMessage.objectlist_objects[i].u_position_y_std=object_List.ObjectList_Objects[i].u_Position_Y_STD;
+            objectMessage.objectlist_objects[i].u_position_z=object_List.ObjectList_Objects[i].u_Position_Z;
+            objectMessage.objectlist_objects[i].u_position_z_std=object_List.ObjectList_Objects[i].u_Position_Z_STD;
+            objectMessage.objectlist_objects[i].u_position_covariancexy=object_List.ObjectList_Objects[i].u_Position_CovarianceXY;
+            objectMessage.objectlist_objects[i].u_position_orientation=object_List.ObjectList_Objects[i].u_Position_Orientation;
+            objectMessage.objectlist_objects[i].u_position_orientation_std=object_List.ObjectList_Objects[i].u_Position_Orientation_STD;
+            objectMessage.objectlist_objects[i].u_existence_invalidflags=object_List.ObjectList_Objects[i].u_Existence_InvalidFlags;
+            objectMessage.objectlist_objects[i].u_existence_ppv=object_List.ObjectList_Objects[i].u_Existence_PPV;
+            objectMessage.objectlist_objects[i].u_existence_probability=object_List.ObjectList_Objects[i].u_Existence_Probability;
+            objectMessage.objectlist_objects[i].u_dynamics_absaccel_invalidflags=object_List.ObjectList_Objects[i].u_Dynamics_AbsAccel_InvalidFlags;
+            objectMessage.objectlist_objects[i].u_dynamics_absvel_invalidflags=object_List.ObjectList_Objects[i].u_Dynamics_AbsVel_InvalidFlags;
+            objectMessage.objectlist_objects[i].u_dynamics_orientation_invalidflags=object_List.ObjectList_Objects[i].u_Dynamics_Orientation_InvalidFlags;
+            objectMessage.objectlist_objects[i].u_dynamics_orientation_rate_mean=object_List.ObjectList_Objects[i].u_Dynamics_Orientation_Rate_Mean;
+            objectMessage.objectlist_objects[i].u_dynamics_orientation_rate_std=object_List.ObjectList_Objects[i].u_Dynamics_Orientation_Rate_STD;
+            objectMessage.objectlist_objects[i].u_dynamics_relaccel_invalidflags=object_List.ObjectList_Objects[i].u_Dynamics_RelAccel_InvalidFlags;
+            objectMessage.objectlist_objects[i].u_dynamics_relvel_invalidflags=object_List.ObjectList_Objects[i].u_Dynamics_RelVel_InvalidFlags;
+            objectMessage.objectlist_objects[i].u_shape_length_edge_invalidflags=object_List.ObjectList_Objects[i].u_Shape_Length_Edge_InvalidFlags;
+            objectMessage.objectlist_objects[i].u_shape_length_edge_mean=object_List.ObjectList_Objects[i].u_Shape_Length_Edge_Mean;
+            objectMessage.objectlist_objects[i].u_shape_length_edge_std=object_List.ObjectList_Objects[i].u_Shape_Length_Edge_STD;
+            objectMessage.objectlist_objects[i].u_shape_length_status=object_List.ObjectList_Objects[i].u_Shape_Length_Status;
+            objectMessage.objectlist_objects[i].u_shape_width_edge_invalidflags=object_List.ObjectList_Objects[i].u_Shape_Width_Edge_InvalidFlags;
+            objectMessage.objectlist_objects[i].u_shape_width_edge_mean=object_List.ObjectList_Objects[i].u_Shape_Width_Edge_Mean;
+            objectMessage.objectlist_objects[i].u_shape_width_edge_std=object_List.ObjectList_Objects[i].u_Shape_Length_Edge_STD;
+            objectMessage.objectlist_objects[i].u_shape_width_status=object_List.ObjectList_Objects[i].u_Shape_Width_Status;
+            objectMessage.objectlist_objects[i].u_statusmeasurement=object_List.ObjectList_Objects[i].u_StatusMeasurement;
+            objectMessage.objectlist_objects[i].u_statusmovement=object_List.ObjectList_Objects[i].u_StatusMovement;
+            objectMessage.objectlist_objects[i].u_statussensor=object_List.ObjectList_Objects[i].u_StatusSensor;
+            objectMessage.objectlist_objects[i].u_classification_animal=object_List.ObjectList_Objects[i].u_Classification_Animal;
+            objectMessage.objectlist_objects[i].u_classification_bicycle=object_List.ObjectList_Objects[i].u_Classification_Bicycle;
+            objectMessage.objectlist_objects[i].u_classification_car=object_List.ObjectList_Objects[i].u_Classification_Car;
+            objectMessage.objectlist_objects[i].u_classification_hazard=object_List.ObjectList_Objects[i].u_Classification_Hazard;
+            objectMessage.objectlist_objects[i].u_classification_motorcycle=object_List.ObjectList_Objects[i].u_Classification_Motorcycle;
+            objectMessage.objectlist_objects[i].u_classification_overdrivable=object_List.ObjectList_Objects[i].u_Classification_Overdrivable;
+            objectMessage.objectlist_objects[i].u_classification_pedestrian=object_List.ObjectList_Objects[i].u_Classification_Pedestrian;
+            objectMessage.objectlist_objects[i].u_classification_truck=object_List.ObjectList_Objects[i].u_Classification_Truck;
+            objectMessage.objectlist_objects[i].u_classification_underdrivable=object_List.ObjectList_Objects[i].u_Classification_Underdrivable;
+            objectMessage.objectlist_objects[i].u_classification_unknown=object_List.ObjectList_Objects[i].u_Position_CovarianceXY;
+            objectMessage.objectlist_objects[i].f_dynamics_absaccel_covariancexy=object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_CovarianceXY;
+            objectMessage.objectlist_objects[i].f_dynamics_absaccel_x=object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_X;
+            objectMessage.objectlist_objects[i].f_dynamics_absaccel_x_std=object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_X_STD;
+            objectMessage.objectlist_objects[i].f_dynamics_absaccel_y=object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_Y;
+            objectMessage.objectlist_objects[i].f_dynamics_absaccel_y_std=object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_Y_STD;
+            objectMessage.objectlist_objects[i].f_dynamics_absvel_covariancexy=object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_CovarianceXY;
+            objectMessage.objectlist_objects[i].f_dynamics_absvel_x=object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_X;
+            objectMessage.objectlist_objects[i].f_dynamics_absvel_x_std=object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_X_STD;
+            objectMessage.objectlist_objects[i].f_dynamics_absvel_y=object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_Y;
+            objectMessage.objectlist_objects[i].f_dynamics_absvel_y_std=object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_Y_STD;
+            objectMessage.objectlist_objects[i].f_dynamics_relaccel_covariancexy=object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_CovarianceXY;
+            objectMessage.objectlist_objects[i].f_dynamics_relaccel_x=object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_X;
+            objectMessage.objectlist_objects[i].f_dynamics_relaccel_x_std=object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_X_STD;
+            objectMessage.objectlist_objects[i].f_dynamics_relaccel_y=object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_Y;
+            objectMessage.objectlist_objects[i].f_dynamics_relaccel_y_std=object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_Y_STD;
+            objectMessage.objectlist_objects[i].f_dynamics_relvel_covariancexy=object_List.ObjectList_Objects[i].f_Dynamics_RelVel_CovarianceXY;
+            objectMessage.objectlist_objects[i].f_dynamics_relvel_x=object_List.ObjectList_Objects[i].f_Dynamics_RelVel_X;
+            objectMessage.objectlist_objects[i].f_dynamics_relvel_x_std=object_List.ObjectList_Objects[i].f_Dynamics_RelVel_X_STD;
+            objectMessage.objectlist_objects[i].f_dynamics_relvel_y=object_List.ObjectList_Objects[i].f_Dynamics_RelVel_Y;
+            objectMessage.objectlist_objects[i].f_dynamics_relvel_y_std=object_List.ObjectList_Objects[i].f_Dynamics_RelVel_Y_STD;  
+        }
+        return objectMessage;
+    }
+    /**
+     * @brief Fills the DetectionList message.
+     * 
+     * @param detectionMessage The DetectionList message to be filled.
+     * @param detectionList The DetectionList struct used to fill the message.
+     * @param clock The clock used to fill the timestamp of the message.
+     * @return DetectionList.msg. The message with all of its fields filled. 
+     */
+    ars548_messages::msg::DetectionList fillDetectionMessage(ars548_messages::msg::DetectionList detectionMessage,DetectionList detectionList,rclcpp::Clock clock){
+        detectionMessage.header.frame_id=this->frame_ID;
+        detectionMessage.header.stamp=clock.now();
+        detectionMessage.aln_status=detectionList.Aln_Status;
+        detectionMessage.crc=detectionList.CRC;
+        detectionMessage.dataid=detectionList.DataID;
+        detectionMessage.eventdataqualifier=detectionList.EventDataQualifier;
+        detectionMessage.extendedqualifier=detectionList.ExtendedQualifier;
+        detectionMessage.length=detectionList.Length;
+        detectionMessage.origin_invalidflags=detectionList.Origin_InvalidFlags;
+        detectionMessage.origin_pitch=detectionList.Origin_Pitch;
+        detectionMessage.origin_pitchstd=detectionList.Origin_Pitchstd;
+        detectionMessage.origin_roll=detectionList.Origin_Roll;
+        detectionMessage.origin_rollstd=detectionList.Origin_Rollstd;
+        detectionMessage.origin_xpos=detectionList.Origin_Xpos;
+        detectionMessage.origin_xstd=detectionList.Origin_Xstd;
+        detectionMessage.origin_yaw=detectionList.Origin_Yaw;
+        detectionMessage.origin_yawstd=detectionList.Origin_Yawstd;
+        detectionMessage.origin_ypos=detectionList.Origin_Ypos;
+        detectionMessage.origin_ystd=detectionList.Origin_Ystd;
+        detectionMessage.origin_zpos=detectionList.Origin_Zpos;
+        detectionMessage.origin_zstd=detectionList.Origin_Zstd;
+        detectionMessage.sqc=detectionList.SQC;
+        detectionMessage.timestamp_nanoseconds=detectionList.Timestamp_Nanoseconds;
+        detectionMessage.timestamp_seconds=detectionList.Timestamp_Seconds;
+        detectionMessage.timestamp_syncstatus=detectionList.Timestamp_SyncStatus;
+        for(uint64_t i=0; i<detectionList.List_NumOfDetections;i++){            
+            detectionMessage.list_detections[i].f_azimuthangle=detectionList.List_Detections[i].f_AzimuthAngle;
+            detectionMessage.list_detections[i].f_azimuthanglestd=detectionList.List_Detections[i].f_AzimuthAngleSTD;
+            detectionMessage.list_detections[i].f_elevationangle=detectionList.List_Detections[i].f_ElevationAngle;
+            detectionMessage.list_detections[i].f_elevationanglestd=detectionList.List_Detections[i].f_ElevationAngleSTD;
+            detectionMessage.list_detections[i].f_range=detectionList.List_Detections[i].f_Range;
+            detectionMessage.list_detections[i].f_rangerate=detectionList.List_Detections[i].f_RangeRate;
+            detectionMessage.list_detections[i].f_rangeratestd=detectionList.List_Detections[i].f_RangeRateSTD;
+            detectionMessage.list_detections[i].f_rangestd=detectionList.List_Detections[i].f_RangeSTD;
+            detectionMessage.list_detections[i].s_rcs=detectionList.List_Detections[i].s_RCS;
+            detectionMessage.list_detections[i].u_ambiguityflag=detectionList.List_Detections[i].u_AmbiguityFlag;
+            detectionMessage.list_detections[i].u_classification=detectionList.List_Detections[i].u_Classification;
+            detectionMessage.list_detections[i].u_invalidflags=detectionList.List_Detections[i].u_InvalidFlags;
+            detectionMessage.list_detections[i].u_measurementid=detectionList.List_Detections[i].u_MeasurementID;
+            detectionMessage.list_detections[i].u_multitargetprobabilitym=detectionList.List_Detections[i].u_MultiTargetProbabilityM;
+            detectionMessage.list_detections[i].u_objectid=detectionList.List_Detections[i].u_ObjectID;
+            detectionMessage.list_detections[i].u_positivepredictivevalue=detectionList.List_Detections[i].u_PositivePredictiveValue;
+            detectionMessage.list_detections[i].u_sortindex=detectionList.List_Detections[i].u_SortIndex;   
+        }
+        detectionMessage.list_invalidflags=detectionList.List_InvalidFlags;
+        detectionMessage.list_numofdetections=detectionList.List_NumOfDetections;
+        detectionMessage.list_radveldomain_max=detectionList.List_RadVelDomain_Max;
+        detectionMessage.list_radveldomain_min=detectionList.List_RadVelDomain_Min;
+        detectionMessage.aln_azimuthcorrection=detectionList.Aln_AzimuthCorrection;
+        detectionMessage.aln_elevationcorrection=detectionList.Aln_ElevationCorrection;
+        return detectionMessage;
+                        
+    }
+    /**
+     * @brief Fills the PointCloud2 message. Used for visualization in Rviz2.
+     * 
+     * @param cloud_msg The PointCloud2 message that is going to be filled.
+     * @return Pointcloud2.msg. The message filled. 
+     */
+    sensor_msgs::msg::PointCloud2 fillCloudMessage(sensor_msgs::msg::PointCloud2 cloud_msg){
+        cloud_msg.header=std_msgs::msg::Header();
+        cloud_msg.header.frame_id=this->frame_ID;
+        cloud_msg.header.stamp.nanosec=std::chrono::nanoseconds().count();
+        cloud_msg.header.stamp.sec=std::chrono::seconds().count();
+        cloud_msg.is_dense=true;
+        cloud_msg.is_bigendian=false;
+        cloud_msg.height=POINTCLOUD_HEIGHT;
+        cloud_msg.width=POINTCLOUD_WIDTH;
+        return cloud_msg;
+    }
+    /**
+     * @brief Fills the PoseArray message. Used for visualization in Rviz2.
+     *
+     * @param cloud_Direction The PoseArray message to be filled.
+     * @param object_List The Object_List struct used to fill the message.
+     * @param i The iterator used to fill the array of poses with the values of the points obtained from the struct.
+     * @return PoseArray.msg. The message filled. 
+     */
+    geometry_msgs::msg::PoseArray fillDirectionMessage(geometry_msgs::msg::PoseArray cloud_Direction,Object_List object_List,u_int32_t i){
+        cloud_Direction.header=std_msgs::msg::Header();
+        cloud_Direction.header.frame_id=this->frame_ID;
+        cloud_Direction.header.stamp.nanosec=std::chrono::nanoseconds().count();
+        cloud_Direction.header.stamp.sec=std::chrono::seconds().count();
+        cloud_Direction.poses[i].position.x=double(object_List.ObjectList_Objects[i].u_Position_X);
+        cloud_Direction.poses[i].position.y=double(object_List.ObjectList_Objects[i].u_Position_Y);
+        cloud_Direction.poses[i].position.z=double(object_List.ObjectList_Objects[i].u_Position_Z);
+        cloud_Direction.poses[i].orientation.x=double(object_List.ObjectList_Objects[i].f_Dynamics_RelVel_X);
+        cloud_Direction.poses[i].orientation.y=double(object_List.ObjectList_Objects[i].f_Dynamics_RelVel_Y);
+        cloud_Direction.poses[i].orientation.z=0;
+        cloud_Direction.poses[i].orientation.w=0;
+        return cloud_Direction;
+    }
+    /**
+     * @brief Reads the data received from the radar and sends it to the user and Rviz2.
+     * 
+     * @param clock The ROS2 clock used to fill some of the fields of the messages.
+     * @return The status of the connection. If it returns 1, there is an error in the execution.
+     */
     int readData(rclcpp::Clock clock){
         auto node=rclcpp::Node::make_shared("publisherObj");
         //These are the publishers that send the data in a custom message
@@ -113,9 +500,8 @@ class ars548_driver : public rclcpp::Node{
             return 1;
         }
 
-            // set up destination address
+        // set up destination address
         //
-        
         memset(&addr, 0, sizeof(addr));
         addr.sin_family = AF_INET;
         addr.sin_addr.s_addr = htonl(INADDR_ANY); // differs from sender
@@ -173,234 +559,41 @@ class ars548_driver : public rclcpp::Node{
             case STATUS_MESSAGE_PAYLOAD:
                 struct UDPStatus status;
                 status = *((struct UDPStatus *)msgbuf);
-                status.ServiceID=ToLittleEndian(status.ServiceID);
-                status.MethodID=ToLittleEndian(status.MethodID);
-                status.PayloadLength=ToLittleEndian(status.PayloadLength);
+                status.ServiceID=ChangeEndianness(status.ServiceID);
+                status.MethodID=ChangeEndianness(status.MethodID);
+                status.PayloadLength=ChangeEndianness(status.PayloadLength);
                 std::cout<< status.ServiceID<<", "<<status.MethodID<<", "<<status.PayloadLength<<std::endl;
                 if(status.MethodID==STATUS_MESSAGE_METHOD_ID && status.PayloadLength==STATUS_MESSAGE_PDU_LENGTH){
-                    status.Timestamp_Nanoseconds=ToLittleEndian(status.Timestamp_Nanoseconds);
-                    status.Timestamp_Seconds=ToLittleEndian(status.Timestamp_Seconds);
-                    status.Longitudinal=ToLittleEndian(status.Longitudinal);
-                    status.Lateral=ToLittleEndian(status.Lateral);
-                    status.Vertical=ToLittleEndian(status.Vertical);
-                    status.Yaw=ToLittleEndian(status.Yaw);
-                    status.Pitch=ToLittleEndian(status.Pitch);
-                    status.Length=ToLittleEndian(status.Length);
-                    status.Width=ToLittleEndian(status.Width);
-                    status.Height=ToLittleEndian(status.Height);
-                    status.Wheelbase=ToLittleEndian(status.Wheelbase);
-                    status.MaximunDistance=ToLittleEndian(status.MaximunDistance);
-                    status.SensorIPAddress_0=ToLittleEndian(status.SensorIPAddress_0);
-                    status.SensorIPAddress_1=ToLittleEndian(status.SensorIPAddress_1);
-                    //std::cout<<"SyncStatus: "<<status.Timestamp_SyncStatus<<std::endl;
-                    statusMessage.cycletime=status.CycleTime;
-                    statusMessage.configurationcounter=status.ConfigurationCounter;
-                    statusMessage.frequencyslot=status.FrequencySlot;
-                    statusMessage.hcc=status.HCC;
-                    statusMessage.height=status.Height;
-                    statusMessage.lateral=status.Lateral;
-                    statusMessage.length=status.Length;
-                    statusMessage.longitudinal=status.Longitudinal;
-                    statusMessage.maximundistance=status.MaximunDistance;
-                    statusMessage.pitch=status.Pitch;
-                    statusMessage.plugorientation=status.PlugOrientation;
-                    statusMessage.powersave_standstill=status.PayloadLength;
-                    statusMessage.sensoripaddress_0=status.SensorIPAddress_0;
-                    statusMessage.sensoripaddress_1=status.SensorIPAddress_1;
-                    statusMessage.status_blockagestatus=status.Status_BlockageStatus;
-                    statusMessage.status_characteristicspeed=status.Status_CharacteristicSpeed;
-                    statusMessage.status_drivingdirection=status.Status_DrivingDirection;
-                    statusMessage.status_lateralacceleration=status.Status_LateralAcceleration;
-                    statusMessage.status_longitudinalacceleration=status.Status_LongitudinalAcceleration;
-                    statusMessage.status_longitudinalvelocity=status.Status_LongitudinalVelocity;
-                    statusMessage.status_radarstatus=status.Status_RadarStatus;
-                    statusMessage.status_steeringangle=status.Status_SteeringAngle;
-                    statusMessage.status_temperaturestatus=status.Status_TemperatureStatus;
-                    statusMessage.status_voltagestatus=status.Status_VoltageStatus;
-                    statusMessage.status_yawrate=status.Status_YawRate;
-                    statusMessage.swversion_major=status.SWVersion_Major;
-                    statusMessage.swversion_minor=status.SWVersion_Minor;
-                    statusMessage.swversion_patch=status.SWVersion_Patch;
-                    statusMessage.timeslot=status.TimeSlot;
-                    statusMessage.timestamp_nanoseconds=status.Timestamp_Nanoseconds;
-                    statusMessage.timestamp_seconds=status.Timestamp_Seconds;
-                    statusMessage.timestamp_syncstatus=status.Timestamp_SyncStatus;
-                    statusMessage.vertical=status.Vertical;
-                    statusMessage.wheelbase=status.Wheelbase;
-                    statusMessage.width=status.Width;
-                    statusMessage.yaw=status.Yaw;
+                    status=modifyStatus(status);
+                    statusMessage=fillStatusMessage(statusMessage,status);
                     statusPublisher->publish(statusMessage);
                 }
                 break;
             case OBJECT_MESSAGE_PAYLOAD:
                 struct Object_List object_List;
                 object_List=*((struct Object_List *)msgbuf);
-                object_List.ServiceID=ToLittleEndian(object_List.ServiceID);
-                object_List.MethodID=ToLittleEndian(object_List.MethodID);
-                object_List.PayloadLength=ToLittleEndian(object_List.PayloadLength);
+                object_List.ServiceID=ChangeEndianness(object_List.ServiceID);
+                object_List.MethodID=ChangeEndianness(object_List.MethodID);
+                object_List.PayloadLength=ChangeEndianness(object_List.PayloadLength);
                 //Setting the ars548_messages
                 std::cout<< object_List.ServiceID<<", "<<object_List.MethodID<<", "<<object_List.PayloadLength<<std::endl;
                 if(object_List.MethodID==OBJECT_MESSAGE_METHOD_ID && object_List.PayloadLength==OBJECT_MESSAGE_PDU_LENGTH){
                      //Changes all of the > 8bit data to little endian
-                        object_List.CRC=ToLittleEndian(object_List.CRC);
-                        object_List.Length=ToLittleEndian(object_List.Length);
-                        object_List.SQC=ToLittleEndian(object_List.SQC);
-                        object_List.DataID=ToLittleEndian(object_List.DataID);
-                        object_List.Timestamp_Nanoseconds=ToLittleEndian(object_List.Timestamp_Nanoseconds);
-                        object_List.Timestamp_Seconds=ToLittleEndian(object_List.Timestamp_Seconds);
-                        object_List.EventDataQualifier=ToLittleEndian(object_List.EventDataQualifier);
-                        objectMessage.crc=object_List.CRC;
-                        objectMessage.length=object_List.Length;
-                        objectMessage.sqc=object_List.SQC;
-                        objectMessage.timestamp_nanoseconds=object_List.Timestamp_Nanoseconds;
-                        objectMessage.timestamp_seconds=object_List.Timestamp_Seconds;
-                        objectMessage.eventdataqualifier=object_List.EventDataQualifier;
-                        objectMessage.extendedqualifier=object_List.ExtendedQualifier;
-                        objectMessage.dataid=object_List.DataID;
-                        objectMessage.objectlist_numofobjects=object_List.ObjectList_NumOfObjects;
-                        objectMessage.timestamp_syncstatus=object_List.Timestamp_SyncStatus;
+                        object_List=modifyObjectList(object_List);
+                        objectMessage=fillMessageObject(objectMessage,object_List,clock);
                         
-                        objectMessage.header.frame_id=this->frame_ID;
-                        objectMessage.header.stamp=clock.now();
-                        std::cout<<"Number of objects:"<<object_List.ObjectList_NumOfObjects<<std::endl;
-                        if (object_List.ObjectList_NumOfObjects>50){
-                            object_List.ObjectList_NumOfObjects=50;
-                        }
                         //Changes all of the > 8bit data to little endian inside the 50 element array
                         for(u_int32_t i =0; i<object_List.ObjectList_NumOfObjects;++i,++iter_x,++iter_y,++iter_z/*,++iterVel*/){
-                            object_List.ObjectList_Objects[i].u_StatusSensor=ToLittleEndian(object_List.ObjectList_Objects[i].u_StatusSensor);
-                            object_List.ObjectList_Objects[i].u_ID=ToLittleEndian(object_List.ObjectList_Objects[i].u_ID);
-                            object_List.ObjectList_Objects[i].u_Age=ToLittleEndian(object_List.ObjectList_Objects[i].u_Age);
-                            object_List.ObjectList_Objects[i].u_Position_InvalidFlags=ToLittleEndian(object_List.ObjectList_Objects[i].u_Position_InvalidFlags);
-                            object_List.ObjectList_Objects[i].u_Position_X=ToLittleEndian(object_List.ObjectList_Objects[i].u_Position_X);
-                            object_List.ObjectList_Objects[i].u_Position_X_STD=ToLittleEndian(object_List.ObjectList_Objects[i].u_Position_X_STD);
-                            object_List.ObjectList_Objects[i].u_Position_Y=ToLittleEndian(object_List.ObjectList_Objects[i].u_Position_Y);
-                            object_List.ObjectList_Objects[i].u_Position_Y_STD=ToLittleEndian(object_List.ObjectList_Objects[i].u_Position_Y_STD);
-                            object_List.ObjectList_Objects[i].u_Position_Z=ToLittleEndian(object_List.ObjectList_Objects[i].u_Position_Z);
-                            object_List.ObjectList_Objects[i].u_Position_Z_STD=ToLittleEndian(object_List.ObjectList_Objects[i].u_Position_Z_STD);
-                            object_List.ObjectList_Objects[i].u_Position_CovarianceXY=ToLittleEndian(object_List.ObjectList_Objects[i].u_Position_CovarianceXY);
-                            object_List.ObjectList_Objects[i].u_Position_Orientation=ToLittleEndian(object_List.ObjectList_Objects[i].u_Position_Orientation);
-                            object_List.ObjectList_Objects[i].u_Position_Orientation_STD=ToLittleEndian(object_List.ObjectList_Objects[i].u_Position_Orientation_STD);
-                            object_List.ObjectList_Objects[i].u_Existence_Probability=ToLittleEndian(object_List.ObjectList_Objects[i].u_Existence_Probability);
-                            object_List.ObjectList_Objects[i].u_Existence_PPV=ToLittleEndian(object_List.ObjectList_Objects[i].u_Existence_PPV);
-                            object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_X=ToLittleEndian(object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_X);
-                            object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_X_STD=ToLittleEndian(object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_X_STD);
-                            object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_Y=ToLittleEndian(object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_Y);
-                            object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_Y_STD=ToLittleEndian(object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_Y_STD);
-                            object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_CovarianceXY=ToLittleEndian(object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_CovarianceXY);
-                            object_List.ObjectList_Objects[i].f_Dynamics_RelVel_X=ToLittleEndian(object_List.ObjectList_Objects[i].f_Dynamics_RelVel_X);
-                            object_List.ObjectList_Objects[i].f_Dynamics_RelVel_X_STD=ToLittleEndian(object_List.ObjectList_Objects[i].f_Dynamics_RelVel_X_STD);
-                            object_List.ObjectList_Objects[i].f_Dynamics_RelVel_Y=ToLittleEndian(object_List.ObjectList_Objects[i].f_Dynamics_RelVel_Y);
-                            object_List.ObjectList_Objects[i].f_Dynamics_RelVel_Y_STD=ToLittleEndian(object_List.ObjectList_Objects[i].f_Dynamics_RelVel_Y_STD);
-                            object_List.ObjectList_Objects[i].f_Dynamics_RelVel_CovarianceXY=ToLittleEndian(object_List.ObjectList_Objects[i].f_Dynamics_RelVel_CovarianceXY);
-                            object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_X=ToLittleEndian(object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_X);
-                            object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_X_STD=ToLittleEndian(object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_X_STD);
-                            object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_Y=ToLittleEndian(object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_Y);
-                            object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_Y_STD=ToLittleEndian(object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_Y_STD);
-                            object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_CovarianceXY=ToLittleEndian(object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_CovarianceXY);
-                            object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_X=ToLittleEndian(object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_Y_STD);
-                            object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_CovarianceXY=ToLittleEndian(object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_CovarianceXY);
-                            object_List.ObjectList_Objects[i].u_Dynamics_Orientation_Rate_Mean=ToLittleEndian(object_List.ObjectList_Objects[i].u_Dynamics_Orientation_Rate_Mean);
-                            object_List.ObjectList_Objects[i].u_Dynamics_Orientation_Rate_STD=ToLittleEndian(object_List.ObjectList_Objects[i].u_Dynamics_Orientation_Rate_STD);
-                            object_List.ObjectList_Objects[i].u_Shape_Length_Status=ToLittleEndian(object_List.ObjectList_Objects[i].u_Shape_Length_Status);
-                            object_List.ObjectList_Objects[i].u_Shape_Length_Edge_Mean=ToLittleEndian(object_List.ObjectList_Objects[i].u_Shape_Length_Edge_Mean);
-                            object_List.ObjectList_Objects[i].u_Shape_Length_Edge_STD=ToLittleEndian(object_List.ObjectList_Objects[i].u_Shape_Length_Edge_STD);
-                            object_List.ObjectList_Objects[i].u_Shape_Width_Status=ToLittleEndian(object_List.ObjectList_Objects[i].u_Shape_Width_Status);
-                            object_List.ObjectList_Objects[i].u_Shape_Width_Edge_Mean=ToLittleEndian(object_List.ObjectList_Objects[i].u_Shape_Width_Edge_Mean);
-                            object_List.ObjectList_Objects[i].u_Shape_Width_Edge_STD=ToLittleEndian(object_List.ObjectList_Objects[i].u_Shape_Width_Edge_STD);
-                            
-                            objectMessage.objectlist_objects[i].u_statussensor=object_List.ObjectList_Objects[i].u_StatusSensor;
-                            objectMessage.objectlist_objects[i].u_id=object_List.ObjectList_Objects[i].u_ID;
-                            objectMessage.objectlist_objects[i].u_age=object_List.ObjectList_Objects[i].u_Age;
-                            objectMessage.objectlist_objects[i].u_position_invalidflags=object_List.ObjectList_Objects[i].u_Position_InvalidFlags;
-                            objectMessage.objectlist_objects[i].u_position_x=object_List.ObjectList_Objects[i].u_Position_X;
-                            objectMessage.objectlist_objects[i].u_position_x_std=object_List.ObjectList_Objects[i].u_Position_X_STD;
-                            objectMessage.objectlist_objects[i].u_position_y=object_List.ObjectList_Objects[i].u_Position_Y;
-                            objectMessage.objectlist_objects[i].u_position_y_std=object_List.ObjectList_Objects[i].u_Position_Y_STD;
-                            objectMessage.objectlist_objects[i].u_position_z=object_List.ObjectList_Objects[i].u_Position_Z;
-                            objectMessage.objectlist_objects[i].u_position_z_std=object_List.ObjectList_Objects[i].u_Position_Z_STD;
-                            objectMessage.objectlist_objects[i].u_position_covariancexy=object_List.ObjectList_Objects[i].u_Position_CovarianceXY;
-                            objectMessage.objectlist_objects[i].u_position_orientation=object_List.ObjectList_Objects[i].u_Position_Orientation;
-                            objectMessage.objectlist_objects[i].u_position_orientation_std=object_List.ObjectList_Objects[i].u_Position_Orientation_STD;
-                            objectMessage.objectlist_objects[i].u_existence_invalidflags=object_List.ObjectList_Objects[i].u_Existence_InvalidFlags;
-                            objectMessage.objectlist_objects[i].u_existence_ppv=object_List.ObjectList_Objects[i].u_Existence_PPV;
-                            objectMessage.objectlist_objects[i].u_existence_probability=object_List.ObjectList_Objects[i].u_Existence_Probability;
-                            objectMessage.objectlist_objects[i].u_dynamics_absaccel_invalidflags=object_List.ObjectList_Objects[i].u_Dynamics_AbsAccel_InvalidFlags;
-                            objectMessage.objectlist_objects[i].u_dynamics_absvel_invalidflags=object_List.ObjectList_Objects[i].u_Dynamics_AbsVel_InvalidFlags;
-                            objectMessage.objectlist_objects[i].u_dynamics_orientation_invalidflags=object_List.ObjectList_Objects[i].u_Dynamics_Orientation_InvalidFlags;
-                            objectMessage.objectlist_objects[i].u_dynamics_orientation_rate_mean=object_List.ObjectList_Objects[i].u_Dynamics_Orientation_Rate_Mean;
-                            objectMessage.objectlist_objects[i].u_dynamics_orientation_rate_std=object_List.ObjectList_Objects[i].u_Dynamics_Orientation_Rate_STD;
-                            objectMessage.objectlist_objects[i].u_dynamics_relaccel_invalidflags=object_List.ObjectList_Objects[i].u_Dynamics_RelAccel_InvalidFlags;
-                            objectMessage.objectlist_objects[i].u_dynamics_relvel_invalidflags=object_List.ObjectList_Objects[i].u_Dynamics_RelVel_InvalidFlags;
-                            objectMessage.objectlist_objects[i].u_shape_length_edge_invalidflags=object_List.ObjectList_Objects[i].u_Shape_Length_Edge_InvalidFlags;
-                            objectMessage.objectlist_objects[i].u_shape_length_edge_mean=object_List.ObjectList_Objects[i].u_Shape_Length_Edge_Mean;
-                            objectMessage.objectlist_objects[i].u_shape_length_edge_std=object_List.ObjectList_Objects[i].u_Shape_Length_Edge_STD;
-                            objectMessage.objectlist_objects[i].u_shape_length_status=object_List.ObjectList_Objects[i].u_Shape_Length_Status;
-                            objectMessage.objectlist_objects[i].u_shape_width_edge_invalidflags=object_List.ObjectList_Objects[i].u_Shape_Width_Edge_InvalidFlags;
-                            objectMessage.objectlist_objects[i].u_shape_width_edge_mean=object_List.ObjectList_Objects[i].u_Shape_Width_Edge_Mean;
-                            objectMessage.objectlist_objects[i].u_shape_width_edge_std=object_List.ObjectList_Objects[i].u_Shape_Length_Edge_STD;
-                            objectMessage.objectlist_objects[i].u_shape_width_status=object_List.ObjectList_Objects[i].u_Shape_Width_Status;
-                            objectMessage.objectlist_objects[i].u_statusmeasurement=object_List.ObjectList_Objects[i].u_StatusMeasurement;
-                            objectMessage.objectlist_objects[i].u_statusmovement=object_List.ObjectList_Objects[i].u_StatusMovement;
-                            objectMessage.objectlist_objects[i].u_statussensor=object_List.ObjectList_Objects[i].u_StatusSensor;
-                            objectMessage.objectlist_objects[i].u_classification_animal=object_List.ObjectList_Objects[i].u_Classification_Animal;
-                            objectMessage.objectlist_objects[i].u_classification_bicycle=object_List.ObjectList_Objects[i].u_Classification_Bicycle;
-                            objectMessage.objectlist_objects[i].u_classification_car=object_List.ObjectList_Objects[i].u_Classification_Car;
-                            objectMessage.objectlist_objects[i].u_classification_hazard=object_List.ObjectList_Objects[i].u_Classification_Hazard;
-                            objectMessage.objectlist_objects[i].u_classification_motorcycle=object_List.ObjectList_Objects[i].u_Classification_Motorcycle;
-                            objectMessage.objectlist_objects[i].u_classification_overdrivable=object_List.ObjectList_Objects[i].u_Classification_Overdrivable;
-                            objectMessage.objectlist_objects[i].u_classification_pedestrian=object_List.ObjectList_Objects[i].u_Classification_Pedestrian;
-                            objectMessage.objectlist_objects[i].u_classification_truck=object_List.ObjectList_Objects[i].u_Classification_Truck;
-                            objectMessage.objectlist_objects[i].u_classification_underdrivable=object_List.ObjectList_Objects[i].u_Classification_Underdrivable;
-                            objectMessage.objectlist_objects[i].u_classification_unknown=object_List.ObjectList_Objects[i].u_Position_CovarianceXY;
-                            objectMessage.objectlist_objects[i].f_dynamics_absaccel_covariancexy=object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_CovarianceXY;
-                            objectMessage.objectlist_objects[i].f_dynamics_absaccel_x=object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_X;
-                            objectMessage.objectlist_objects[i].f_dynamics_absaccel_x_std=object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_X_STD;
-                            objectMessage.objectlist_objects[i].f_dynamics_absaccel_y=object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_Y;
-                            objectMessage.objectlist_objects[i].f_dynamics_absaccel_y_std=object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_Y_STD;
-                            objectMessage.objectlist_objects[i].f_dynamics_absvel_covariancexy=object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_CovarianceXY;
-                            objectMessage.objectlist_objects[i].f_dynamics_absvel_x=object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_X;
-                            objectMessage.objectlist_objects[i].f_dynamics_absvel_x_std=object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_X_STD;
-                            objectMessage.objectlist_objects[i].f_dynamics_absvel_y=object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_Y;
-                            objectMessage.objectlist_objects[i].f_dynamics_absvel_y_std=object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_Y_STD;
-                            objectMessage.objectlist_objects[i].f_dynamics_relaccel_covariancexy=object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_CovarianceXY;
-                            objectMessage.objectlist_objects[i].f_dynamics_relaccel_x=object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_X;
-                            objectMessage.objectlist_objects[i].f_dynamics_relaccel_x_std=object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_X_STD;
-                            objectMessage.objectlist_objects[i].f_dynamics_relaccel_y=object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_Y;
-                            objectMessage.objectlist_objects[i].f_dynamics_relaccel_y_std=object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_Y_STD;
-                            objectMessage.objectlist_objects[i].f_dynamics_relvel_covariancexy=object_List.ObjectList_Objects[i].f_Dynamics_RelVel_CovarianceXY;
-                            objectMessage.objectlist_objects[i].f_dynamics_relvel_x=object_List.ObjectList_Objects[i].f_Dynamics_RelVel_X;
-                            objectMessage.objectlist_objects[i].f_dynamics_relvel_x_std=object_List.ObjectList_Objects[i].f_Dynamics_RelVel_X_STD;
-                            objectMessage.objectlist_objects[i].f_dynamics_relvel_y=object_List.ObjectList_Objects[i].f_Dynamics_RelVel_Y;
-                            objectMessage.objectlist_objects[i].f_dynamics_relvel_y_std=object_List.ObjectList_Objects[i].f_Dynamics_RelVel_Y_STD;  
                             AbsVel=3.6*sqrt(pow(object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_X,2)+pow(object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_Y,2));
-                            //if (AbsVel>10){
-                                cloud_msgObj.header=std_msgs::msg::Header();
-                                cloud_msgObj.header.frame_id=this->frame_ID;
-                                cloud_msgObj.header.stamp.nanosec=std::chrono::nanoseconds().count();
-                                cloud_msgObj.header.stamp.sec=std::chrono::seconds().count();
-                                cloud_msgObj.is_dense=true;
-                                cloud_msgObj.is_bigendian=false;
-                                cloud_msgObj.height=POINTCLOUD_HEIGHT;
-                                cloud_msgObj.width=POINTCLOUD_WIDTH;
-                                *iter_x=object_List.ObjectList_Objects[i].u_Position_X;
-                                *iter_y=object_List.ObjectList_Objects[i].u_Position_Y;
-                                *iter_z=object_List.ObjectList_Objects[i].u_Position_Z;
-                                //To show the direction of the moving object
+                            cloud_msgObj=fillCloudMessage(cloud_msgObj);
+                            *iter_x=object_List.ObjectList_Objects[i].u_Position_X;
+                            *iter_y=object_List.ObjectList_Objects[i].u_Position_Y;
+                            *iter_z=object_List.ObjectList_Objects[i].u_Position_Z;
+                            //To show the direction of the moving object
+                            cloud_Direction=fillDirectionMessage(cloud_Direction,object_List,i);
                             
-                                cloud_Direction.header=std_msgs::msg::Header();
-                                cloud_Direction.header.frame_id=this->frame_ID;
-                                cloud_Direction.header.stamp.nanosec=std::chrono::nanoseconds().count();
-                                cloud_Direction.header.stamp.sec=std::chrono::seconds().count();
-                                cloud_Direction.poses[i].position.x=double(object_List.ObjectList_Objects[i].u_Position_X);
-                                cloud_Direction.poses[i].position.y=double(object_List.ObjectList_Objects[i].u_Position_Y);
-                                cloud_Direction.poses[i].position.z=double(object_List.ObjectList_Objects[i].u_Position_Z);
-                                cloud_Direction.poses[i].orientation.x=double(object_List.ObjectList_Objects[i].f_Dynamics_RelVel_X);
-                                cloud_Direction.poses[i].orientation.y=double(object_List.ObjectList_Objects[i].f_Dynamics_RelVel_Y);
-                                cloud_Direction.poses[i].orientation.z=0;
-                                cloud_Direction.poses[i].orientation.w=0;
-                                std::cout<<"Speed of object "<<i<<": "<< AbsVel<<"km/h"<<std::endl;
-                            //}     
+                            //std::cout<<"Speed of object "<<i<<": "<< AbsVel<<"km/h"<<std::endl;
+                           
                         } 
                         pubObj->publish(cloud_msgObj);
                         directionPublisher->publish(cloud_Direction);
@@ -409,125 +602,29 @@ class ars548_driver : public rclcpp::Node{
                 break;
             case DETECTION_MESSAGE_PAYLOAD:
                 float posX, posY,posZ;
-                cloud_msgDetect.height=POINTCLOUD_HEIGHT;
-                cloud_msgDetect.width=POINTCLOUD_WIDTH;
-                cloud_msgDetect.header=std_msgs::msg::Header();
-                cloud_msgDetect.header.frame_id=this->frame_ID;
-                cloud_msgDetect.header.stamp.nanosec=std::chrono::nanoseconds().count();
-                cloud_msgDetect.header.stamp.sec=std::chrono::seconds().count();
-                cloud_msgDetect.is_dense=true;
-                cloud_msgDetect.is_bigendian=false;
+                cloud_msgDetect=fillCloudMessage(cloud_msgDetect);
                 struct DetectionList detectionList;
                 detectionList=*((struct DetectionList *)msgbuf);
-                detectionList.ServiceID=ToLittleEndian(detectionList.ServiceID);
-                detectionList.MethodID=ToLittleEndian(detectionList.MethodID);
-                detectionList.PayloadLength=ToLittleEndian(detectionList.PayloadLength);
+                detectionList.ServiceID=ChangeEndianness(detectionList.ServiceID);
+                detectionList.MethodID=ChangeEndianness(detectionList.MethodID);
+                detectionList.PayloadLength=ChangeEndianness(detectionList.PayloadLength);
                 std::cout<<detectionList.ServiceID<<", "<<detectionList.MethodID<<", "<<detectionList.PayloadLength<<std::endl;
                 if(detectionList.MethodID==DETECTION_MESSAGE_METHOD_ID && detectionList.PayloadLength==DETECTION_MESSAGE_PDU_LENGTH){
-                    detectionList.CRC=ToLittleEndian(detectionList.CRC);
-                        detectionList.Length=ToLittleEndian(detectionList.Length);
-                        detectionList.SQC=ToLittleEndian(detectionList.SQC);
-                        detectionList.DataID=ToLittleEndian(detectionList.DataID);
-                        detectionList.Timestamp_Nanoseconds=ToLittleEndian(detectionList.Timestamp_Nanoseconds);
-                        detectionList.Timestamp_Seconds=ToLittleEndian(detectionList.Timestamp_Seconds);
-                        detectionList.EventDataQualifier=ToLittleEndian(detectionList.EventDataQualifier);
-                        detectionList.Origin_InvalidFlags=ToLittleEndian(detectionList.Origin_InvalidFlags);
-                        detectionList.Origin_Xpos=ToLittleEndian(detectionList.Origin_Xpos);
-                        detectionList.Origin_Xstd=ToLittleEndian(detectionList.Origin_Xstd);
-                        detectionList.Origin_Ypos=ToLittleEndian(detectionList.Origin_Ypos);
-                        detectionList.Origin_Ystd=ToLittleEndian(detectionList.Origin_Ystd);
-                        detectionList.Origin_Zpos=ToLittleEndian(detectionList.Origin_Zpos);
-                        detectionList.Origin_Zstd=ToLittleEndian(detectionList.Origin_Zstd);
-                        detectionList.Origin_Roll=ToLittleEndian(detectionList.Origin_Roll);
-                        detectionList.Origin_Rollstd=ToLittleEndian(detectionList.Origin_Rollstd);
-                        detectionList.Origin_Pitch=ToLittleEndian(detectionList.Origin_Pitch);
-                        detectionList.Origin_Pitchstd=ToLittleEndian(detectionList.Origin_Pitchstd);
-                        detectionList.Origin_Yaw=ToLittleEndian(detectionList.Origin_Yaw);
-                        detectionList.Origin_Yawstd=ToLittleEndian(detectionList.Origin_Yawstd);
-                    
-                        detectionMessage.header.frame_id=this->frame_ID;
-                        detectionMessage.header.stamp=clock.now();
-                        detectionMessage.aln_status=detectionList.Aln_Status;
-                        detectionMessage.crc=detectionList.CRC;
-                        detectionMessage.dataid=detectionList.DataID;
-                        detectionMessage.eventdataqualifier=detectionList.EventDataQualifier;
-                        detectionMessage.extendedqualifier=detectionList.ExtendedQualifier;
-                        detectionMessage.length=detectionList.Length;
-                        detectionMessage.origin_invalidflags=detectionList.Origin_InvalidFlags;
-                        detectionMessage.origin_pitch=detectionList.Origin_Pitch;
-                        detectionMessage.origin_pitchstd=detectionList.Origin_Pitchstd;
-                        detectionMessage.origin_roll=detectionList.Origin_Roll;
-                        detectionMessage.origin_rollstd=detectionList.Origin_Rollstd;
-                        detectionMessage.origin_xpos=detectionList.Origin_Xpos;
-                        detectionMessage.origin_xstd=detectionList.Origin_Xstd;
-                        detectionMessage.origin_yaw=detectionList.Origin_Yaw;
-                        detectionMessage.origin_yawstd=detectionList.Origin_Yawstd;
-                        detectionMessage.origin_ypos=detectionList.Origin_Ypos;
-                        detectionMessage.origin_ystd=detectionList.Origin_Ystd;
-                        detectionMessage.origin_zpos=detectionList.Origin_Zpos;
-                        detectionMessage.origin_zstd=detectionList.Origin_Zstd;
-                        detectionMessage.sqc=detectionList.SQC;
-                        detectionMessage.timestamp_nanoseconds=detectionList.Timestamp_Nanoseconds;
-                        detectionMessage.timestamp_seconds=detectionList.Timestamp_Seconds;
-                        detectionMessage.timestamp_syncstatus=detectionList.Timestamp_SyncStatus;
-                        detectionList.List_NumOfDetections=ToLittleEndian(detectionList.List_NumOfDetections);
-                        detectionList.List_RadVelDomain_Min=ToLittleEndian(detectionList.List_RadVelDomain_Min);
-                        detectionList.List_RadVelDomain_Max=ToLittleEndian(detectionList.List_RadVelDomain_Max);
-                        detectionList.Aln_AzimuthCorrection=ToLittleEndian(detectionList.Aln_AzimuthCorrection);
-                        detectionList.Aln_ElevationCorrection=ToLittleEndian(detectionList.Aln_ElevationCorrection);
+                    detectionList=modifyDetectionList(detectionList);
+                    detectionMessage=fillDetectionMessage(detectionMessage,detectionList,clock);
+                        
                         //Changes all of the > 8bit data to little endian inside the 800 elements array
                         for(uint64_t i=0; i<detectionList.List_NumOfDetections;i++,++iter_xD,++iter_yD,++iter_zD){
-                            //Setting the detection data to littleEndian
-                            detectionList.List_Detections[i].f_AzimuthAngle=ToLittleEndian(detectionList.List_Detections[i].f_AzimuthAngle);
-                            detectionList.List_Detections[i].f_AzimuthAngleSTD=ToLittleEndian(detectionList.List_Detections[i].f_AzimuthAngleSTD);
-                            detectionList.List_Detections[i].f_ElevationAngle=ToLittleEndian(detectionList.List_Detections[i].f_ElevationAngle);
-                            detectionList.List_Detections[i].f_ElevationAngleSTD=ToLittleEndian(detectionList.List_Detections[i].f_ElevationAngleSTD);
-                            detectionList.List_Detections[i].f_Range=ToLittleEndian(detectionList.List_Detections[i].f_Range);
-                            detectionList.List_Detections[i].f_RangeSTD=ToLittleEndian(detectionList.List_Detections[i].f_RangeSTD);
-                            detectionList.List_Detections[i].f_RangeRate=ToLittleEndian(detectionList.List_Detections[i].f_RangeRate);
-                            detectionList.List_Detections[i].f_RangeRateSTD=ToLittleEndian(detectionList.List_Detections[i].f_RangeRateSTD);
-                            detectionList.List_Detections[i].u_MeasurementID=ToLittleEndian(detectionList.List_Detections[i].u_MeasurementID);
-                            detectionList.List_Detections[i].u_ObjectID=ToLittleEndian(detectionList.List_Detections[i].u_ObjectID);
-                            detectionList.List_Detections[i].u_SortIndex=ToLittleEndian(detectionList.List_Detections[i].u_SortIndex);
-                            //
-                            detectionMessage.list_detections[i].f_azimuthangle=detectionList.List_Detections[i].f_AzimuthAngle;
-                            detectionMessage.list_detections[i].f_azimuthanglestd=detectionList.List_Detections[i].f_AzimuthAngleSTD;
-                            detectionMessage.list_detections[i].f_elevationangle=detectionList.List_Detections[i].f_ElevationAngle;
-                            detectionMessage.list_detections[i].f_elevationanglestd=detectionList.List_Detections[i].f_ElevationAngleSTD;
-                            detectionMessage.list_detections[i].f_range=detectionList.List_Detections[i].f_Range;
-                            detectionMessage.list_detections[i].f_rangerate=detectionList.List_Detections[i].f_RangeRate;
-                            detectionMessage.list_detections[i].f_rangeratestd=detectionList.List_Detections[i].f_RangeRateSTD;
-                            detectionMessage.list_detections[i].f_rangestd=detectionList.List_Detections[i].f_RangeSTD;
-                            detectionMessage.list_detections[i].s_rcs=detectionList.List_Detections[i].s_RCS;
-                            detectionMessage.list_detections[i].u_ambiguityflag=detectionList.List_Detections[i].u_AmbiguityFlag;
-                            detectionMessage.list_detections[i].u_classification=detectionList.List_Detections[i].u_Classification;
-                            detectionMessage.list_detections[i].u_invalidflags=detectionList.List_Detections[i].u_InvalidFlags;
-                            detectionMessage.list_detections[i].u_measurementid=detectionList.List_Detections[i].u_MeasurementID;
-                            detectionMessage.list_detections[i].u_multitargetprobabilitym=detectionList.List_Detections[i].u_MultiTargetProbabilityM;
-                            detectionMessage.list_detections[i].u_objectid=detectionList.List_Detections[i].u_ObjectID;
-                            detectionMessage.list_detections[i].u_positivepredictivevalue=detectionList.List_Detections[i].u_PositivePredictiveValue;
-                            detectionMessage.list_detections[i].u_sortindex=detectionList.List_Detections[i].u_SortIndex;   
                             posX=detectionList.List_Detections[i].f_Range*float(std::cos(detectionList.List_Detections[i].f_ElevationAngle))*float(std::cos(detectionList.List_Detections[i].f_AzimuthAngle));
                             posY=detectionList.List_Detections[i].f_Range*float(std::cos(detectionList.List_Detections[i].f_ElevationAngle))*float(std::sin(detectionList.List_Detections[i].f_AzimuthAngle));
                             posZ=detectionList.List_Detections[i].f_Range*float(std::sin(detectionList.List_Detections[i].f_ElevationAngle));
-                           // if(posZ>0){
-                                *iter_xD=posX;
-                                *iter_yD=posY;
-                                *iter_zD=posZ;
-                           // }
+                            *iter_xD=posX;
+                            *iter_yD=posY;
+                            *iter_zD=posZ;
                             std::cout<<"X Possition_Final: "<<posX<<std::endl;
                             std::cout<<"Y Possition_final: "<<posY<<std::endl;
-                            std::cout<<"Z Possition_Final: "<<posZ<<std::endl;
-                            
-                            
+                            std::cout<<"Z Possition_Final: "<<posZ<<std::endl;    
                         }
-                        
-                        detectionMessage.list_invalidflags=detectionList.List_InvalidFlags;
-                        detectionMessage.list_numofdetections=detectionList.List_NumOfDetections;
-                        detectionMessage.list_radveldomain_max=detectionList.List_RadVelDomain_Max;
-                        detectionMessage.list_radveldomain_min=detectionList.List_RadVelDomain_Min;
-                        detectionMessage.aln_azimuthcorrection=detectionList.Aln_AzimuthCorrection;
-                        detectionMessage.aln_elevationcorrection=detectionList.Aln_ElevationCorrection;
                         std::cout<<"SyncStatusD: "<<detectionList.Timestamp_SyncStatus<<std::endl;
                         pubDetect->publish(cloud_msgDetect);
                         detectionsPublisher->publish(detectionMessage);
@@ -542,7 +639,9 @@ class ars548_driver : public rclcpp::Node{
     std::string ars548_IP;
     std::string frame_ID;
     int ars548_Port;
-
+    /**
+     * @brief  ars548_driver Node. Used to try the driver. 
+     */
     ars548_driver():Node("ars_548_driver_with_parameters"){
         //Parameter declaration so the user can change them
         this->declare_parameter("radarIP",DEFAULT_RADAR_IP);
