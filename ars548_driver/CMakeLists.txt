@@ -12,9 +12,10 @@ find_package(rclcpp REQUIRED)
 find_package(ars548_messages REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
 add_executable(ars548_driver src/ars548_driver_node.cpp)
-ament_target_dependencies(ars548_driver rclcpp ars548_messages sensor_msgs )  
+ament_target_dependencies(ars548_driver rclcpp ars548_messages sensor_msgs tf2_geometry_msgs)  
 
 install(TARGETS
   ars548_driver

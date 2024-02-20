@@ -2,6 +2,7 @@
  * @file ars548_data.h
  * @brief ars548_data contains all of the Structures needed to save and modify the data from the radar.
  * It is also used to fill the messages sent to the user.
+ * @brief Data obtained from the RadarSensors_Annex_AES548_IO SW 05.48.04.pdf
  */
 #include <cstdint>
 #pragma pack(1)

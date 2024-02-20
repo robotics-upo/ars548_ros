@@ -13,9 +13,11 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include "rclcpp/rclcpp.hpp"
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 #include <geometry_msgs/msg/pose_array.hpp>
+
 #include "ars548_messages/msg/status.hpp"
 #include "ars548_messages/msg/detection_list.hpp"
 #include "ars548_messages/msg/object_list.hpp"
@@ -231,9 +233,9 @@ class ars548_driver : public rclcpp::Node{
      * 
      * @param statusMessage The Status message to be filled.
      * @param status The Status struct used to fill the message.
-     * @return Status.msg The message with all of its fields filled. 
+     * 
      */
-    ars548_messages::msg::Status fillStatusMessage(ars548_messages::msg::Status statusMessage, UDPStatus status){
+    void fillStatusMessage(ars548_messages::msg::Status &statusMessage, UDPStatus status){
         statusMessage.cycletime=status.CycleTime;
         statusMessage.configurationcounter=status.ConfigurationCounter;
         statusMessage.frequencyslot=status.FrequencySlot;
@@ -270,7 +272,6 @@ class ars548_driver : public rclcpp::Node{
         statusMessage.wheelbase=status.Wheelbase;
         statusMessage.width=status.Width;
         statusMessage.yaw=status.Yaw;
-        return statusMessage;
     }
     /**
      * @brief Fills the ObjectList message.
@@ -278,9 +279,9 @@ class ars548_driver : public rclcpp::Node{
      * @param objectMessage The object message to be filled.
      * @param object_List The Object_List struct used to fill the message.
      * @param clock The clock used to fill the timestamp of the message.
-     * @return ObjectList.msg The message with all of its fields filled.
+     * 
      */
-    ars548_messages::msg::ObjectList fillMessageObject(ars548_messages::msg::ObjectList objectMessage,Object_List object_List,rclcpp::Clock clock){
+    void fillMessageObject(ars548_messages::msg::ObjectList &objectMessage,Object_List object_List,rclcpp::Clock clock){
         objectMessage.crc=object_List.CRC;
         objectMessage.length=object_List.Length;
         objectMessage.sqc=object_List.SQC;
@@ -360,7 +361,7 @@ class ars548_driver : public rclcpp::Node{
             objectMessage.objectlist_objects[i].f_dynamics_relvel_y=object_List.ObjectList_Objects[i].f_Dynamics_RelVel_Y;
             objectMessage.objectlist_objects[i].f_dynamics_relvel_y_std=object_List.ObjectList_Objects[i].f_Dynamics_RelVel_Y_STD;  
         }
-        return objectMessage;
+        
     }
     /**
      * @brief Fills the DetectionList message.
@@ -368,9 +369,8 @@ class ars548_driver : public rclcpp::Node{
      * @param detectionMessage The DetectionList message to be filled.
      * @param detectionList The DetectionList struct used to fill the message.
      * @param clock The clock used to fill the timestamp of the message.
-     * @return DetectionList.msg. The message with all of its fields filled. 
      */
-    ars548_messages::msg::DetectionList fillDetectionMessage(ars548_messages::msg::DetectionList detectionMessage,DetectionList detectionList,rclcpp::Clock clock){
+    void fillDetectionMessage(ars548_messages::msg::DetectionList &detectionMessage,DetectionList detectionList,rclcpp::Clock clock){
         detectionMessage.header.frame_id=this->frame_ID;
         detectionMessage.header.stamp=clock.now();
         detectionMessage.aln_status=detectionList.Aln_Status;
@@ -421,16 +421,13 @@ class ars548_driver : public rclcpp::Node{
         detectionMessage.list_radveldomain_min=detectionList.List_RadVelDomain_Min;
         detectionMessage.aln_azimuthcorrection=detectionList.Aln_AzimuthCorrection;
         detectionMessage.aln_elevationcorrection=detectionList.Aln_ElevationCorrection;
-        return detectionMessage;
-                        
     }
     /**
      * @brief Fills the PointCloud2 message. Used for visualization in Rviz2.
      * 
      * @param cloud_msg The PointCloud2 message that is going to be filled.
-     * @return Pointcloud2.msg. The message filled. 
      */
-    sensor_msgs::msg::PointCloud2 fillCloudMessage(sensor_msgs::msg::PointCloud2 cloud_msg){
+    void fillCloudMessage(sensor_msgs::msg::PointCloud2 &cloud_msg){
         cloud_msg.header=std_msgs::msg::Header();
         cloud_msg.header.frame_id=this->frame_ID;
         cloud_msg.header.stamp.nanosec=std::chrono::nanoseconds().count();
@@ -439,7 +436,6 @@ class ars548_driver : public rclcpp::Node{
         cloud_msg.is_bigendian=false;
         cloud_msg.height=POINTCLOUD_HEIGHT;
         cloud_msg.width=POINTCLOUD_WIDTH;
-        return cloud_msg;
     }
     /**
      * @brief Fills the PoseArray message. Used for visualization in Rviz2.
@@ -449,19 +445,22 @@ class ars548_driver : public rclcpp::Node{
      * @param i The iterator used to fill the array of poses with the values of the points obtained from the struct.
      * @return PoseArray.msg. The message filled. 
      */
-    geometry_msgs::msg::PoseArray fillDirectionMessage(geometry_msgs::msg::PoseArray cloud_Direction,Object_List object_List,u_int32_t i){
-        cloud_Direction.header=std_msgs::msg::Header();
+    void fillDirectionMessage(geometry_msgs::msg::PoseArray &cloud_Direction,Object_List object_List,u_int32_t i){
+        tf2::Quaternion q;
+        float yaw;
+        cloud_Direction.header = std_msgs::msg::Header();
         cloud_Direction.header.frame_id=this->frame_ID;
         cloud_Direction.header.stamp.nanosec=std::chrono::nanoseconds().count();
         cloud_Direction.header.stamp.sec=std::chrono::seconds().count();
-        cloud_Direction.poses[i].position.x=double(object_List.ObjectList_Objects[i].u_Position_X);
-        cloud_Direction.poses[i].position.y=double(object_List.ObjectList_Objects[i].u_Position_Y);
-        cloud_Direction.poses[i].position.z=double(object_List.ObjectList_Objects[i].u_Position_Z);
-        cloud_Direction.poses[i].orientation.x=double(object_List.ObjectList_Objects[i].f_Dynamics_RelVel_X);
-        cloud_Direction.poses[i].orientation.y=double(object_List.ObjectList_Objects[i].f_Dynamics_RelVel_Y);
-        cloud_Direction.poses[i].orientation.z=0;
-        cloud_Direction.poses[i].orientation.w=0;
-        return cloud_Direction;
+        cloud_Direction.poses[i].position.x = double(object_List.ObjectList_Objects[i].u_Position_X);
+        cloud_Direction.poses[i].position.y = double(object_List.ObjectList_Objects[i].u_Position_Y);
+        cloud_Direction.poses[i].position.z = double(object_List.ObjectList_Objects[i].u_Position_Z);
+        yaw = atan2(object_List.ObjectList_Objects[i].f_Dynamics_RelVel_Y,object_List.ObjectList_Objects[i].f_Dynamics_RelVel_X);   
+        q.setRPY(0,0,yaw);
+        cloud_Direction.poses[i].orientation.x=q.x();
+        cloud_Direction.poses[i].orientation.y=q.y();
+        cloud_Direction.poses[i].orientation.z=q.z();
+        cloud_Direction.poses[i].orientation.w=q.w();
     }
     /**
      * @brief Reads the data received from the radar and sends it to the user and Rviz2.
@@ -565,7 +564,7 @@ class ars548_driver : public rclcpp::Node{
                 std::cout<< status.ServiceID<<", "<<status.MethodID<<", "<<status.PayloadLength<<std::endl;
                 if(status.MethodID==STATUS_MESSAGE_METHOD_ID && status.PayloadLength==STATUS_MESSAGE_PDU_LENGTH){
                     status=modifyStatus(status);
-                    statusMessage=fillStatusMessage(statusMessage,status);
+                    fillStatusMessage(statusMessage,status);
                     statusPublisher->publish(statusMessage);
                 }
                 break;
@@ -580,20 +579,17 @@ class ars548_driver : public rclcpp::Node{
                 if(object_List.MethodID==OBJECT_MESSAGE_METHOD_ID && object_List.PayloadLength==OBJECT_MESSAGE_PDU_LENGTH){
                      //Changes all of the > 8bit data to little endian
                         object_List=modifyObjectList(object_List);
-                        objectMessage=fillMessageObject(objectMessage,object_List,clock);
+                        fillMessageObject(objectMessage,object_List,clock);
                         
                         //Changes all of the > 8bit data to little endian inside the 50 element array
+                        fillCloudMessage(cloud_msgObj);
                         for(u_int32_t i =0; i<object_List.ObjectList_NumOfObjects;++i,++iter_x,++iter_y,++iter_z/*,++iterVel*/){
                             AbsVel=3.6*sqrt(pow(object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_X,2)+pow(object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_Y,2));
-                            cloud_msgObj=fillCloudMessage(cloud_msgObj);
                             *iter_x=object_List.ObjectList_Objects[i].u_Position_X;
                             *iter_y=object_List.ObjectList_Objects[i].u_Position_Y;
                             *iter_z=object_List.ObjectList_Objects[i].u_Position_Z;
                             //To show the direction of the moving object
-                            cloud_Direction=fillDirectionMessage(cloud_Direction,object_List,i);
-                            
-                            //std::cout<<"Speed of object "<<i<<": "<< AbsVel<<"km/h"<<std::endl;
-                           
+                            fillDirectionMessage(cloud_Direction,object_List,i);
                         } 
                         pubObj->publish(cloud_msgObj);
                         directionPublisher->publish(cloud_Direction);
@@ -602,7 +598,7 @@ class ars548_driver : public rclcpp::Node{
                 break;
             case DETECTION_MESSAGE_PAYLOAD:
                 float posX, posY,posZ;
-                cloud_msgDetect=fillCloudMessage(cloud_msgDetect);
+                fillCloudMessage(cloud_msgDetect);
                 struct DetectionList detectionList;
                 detectionList=*((struct DetectionList *)msgbuf);
                 detectionList.ServiceID=ChangeEndianness(detectionList.ServiceID);
@@ -611,7 +607,7 @@ class ars548_driver : public rclcpp::Node{
                 std::cout<<detectionList.ServiceID<<", "<<detectionList.MethodID<<", "<<detectionList.PayloadLength<<std::endl;
                 if(detectionList.MethodID==DETECTION_MESSAGE_METHOD_ID && detectionList.PayloadLength==DETECTION_MESSAGE_PDU_LENGTH){
                     detectionList=modifyDetectionList(detectionList);
-                    detectionMessage=fillDetectionMessage(detectionMessage,detectionList,clock);
+                    fillDetectionMessage(detectionMessage,detectionList,clock);
                         
                         //Changes all of the > 8bit data to little endian inside the 800 elements array
                         for(uint64_t i=0; i<detectionList.List_NumOfDetections;i++,++iter_xD,++iter_yD,++iter_zD){
