@@ -126,7 +126,7 @@ class ars548_driver_filter : public rclcpp::Node
         filtered_cloud_Direction.poses.reserve(SIZE);
         pubObjFilter=this->create_publisher<sensor_msgs::msg::PointCloud2>("PointCloudObjectFiltered",10);
         pubDirFilter=this->create_publisher<geometry_msgs::msg::PoseArray>("DirectionFiltered",10);    
-        subscription_=this->create_subscription<ars548_messages::msg::ObjectList>("ObjectCloud",10,std::bind(&ars548_driver_filter::topic_callback,this,_1));
+        subscription_=this->create_subscription<ars548_messages::msg::ObjectList>("ObjectList",10,std::bind(&ars548_driver_filter::topic_callback,this,_1));
         RCLCPP_INFO(this->get_logger(),"ARS548 filter initialized: Minimum velocity: %f, Frame ID: %s",min_velocity, frame_ID.c_str());
     }
     

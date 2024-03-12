@@ -475,9 +475,9 @@ class ars548_driver : public rclcpp::Node{
     int readData(rclcpp::Clock clock){
         auto node=rclcpp::Node::make_shared("publisherObj");
         //These are the publishers that send the data in a custom message
-        auto statusPublisher=node->create_publisher<ars548_messages::msg::Status>("StatusCloud",10);
-        auto objectPublisher=node->create_publisher<ars548_messages::msg::ObjectList>("ObjectCloud",10);
-        auto detectionsPublisher=node->create_publisher<ars548_messages::msg::DetectionList>("DetectionCloud",10);
+        auto statusPublisher=node->create_publisher<ars548_messages::msg::Status>("Status",10);
+        auto objectPublisher=node->create_publisher<ars548_messages::msg::ObjectList>("ObjectList",10);
+        auto detectionsPublisher=node->create_publisher<ars548_messages::msg::DetectionList>("DetectionList",10);
         //These are the publishers that send the data to Rviz2
         auto directionPublisher=node->create_publisher<geometry_msgs::msg::PoseArray>("DirectionVelocity",10);
         auto pubObj= node->create_publisher<sensor_msgs::msg::PointCloud2>("PointCloudObject",10);
