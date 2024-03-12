@@ -1,0 +1,14 @@
+<launch>
+    <arg name="frameID_Radar" default="ARS_548"/>
+    <arg name="radarIP" default="224.0.2.2"/>
+    <arg name="radarPort" default="42102"/>
+    <arg name="lidarIP" default="192.168.0.4"/>
+    <node pkg="ars548_driver" exec="ars548_driver" name="radar">
+        <param name="radarIP" value="$(var radarIP)"/>
+        <param name="radarPort" value="$(var radarPort)"/>
+        <param name="frameID" value="$(var frameID_Radar)"/>
+    </node>
+    <include file="$(find-pkg-share ouster_ros)/launch/driver.launch.py" />
+    <node pkg="rviz2" exec="rviz2" name="Visualization" args="-d $(find-pkg-share ars548_driver)/rviz/RadarLidar.rviz"/>
+    <node pkg="tf2_ros" exec="static_transform_publisher" args="--x 0.15 --y 0.05 --z 0.2 --frame-id os_sensor  --child-frame-id ARS_548"/>
+</launch>
