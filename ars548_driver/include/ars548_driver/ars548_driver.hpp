@@ -139,7 +139,7 @@ class ars548_driver : public rclcpp::Node{
         if (object_List.ObjectList_NumOfObjects>50){
             object_List.ObjectList_NumOfObjects=50;
         }
-        for(u_int32_t i =0; i<object_List.ObjectList_NumOfObjects;++i){
+        for(u_int32_t i = 0; i<object_List.ObjectList_NumOfObjects;++i){
             object_List.ObjectList_Objects[i].u_StatusSensor=ChangeEndianness(object_List.ObjectList_Objects[i].u_StatusSensor);
             object_List.ObjectList_Objects[i].u_ID=ChangeEndianness(object_List.ObjectList_Objects[i].u_ID);
             object_List.ObjectList_Objects[i].u_Age=ChangeEndianness(object_List.ObjectList_Objects[i].u_Age);
@@ -549,6 +549,11 @@ class ars548_driver : public rclcpp::Node{
             sensor_msgs::PointCloud2Iterator<float> iter_xD(cloud_msgDetect,"x");
             sensor_msgs::PointCloud2Iterator<float> iter_yD(cloud_msgDetect,"y");
             sensor_msgs::PointCloud2Iterator<float> iter_zD(cloud_msgDetect,"z");
+            sensor_msgs::PointCloud2Iterator<float> iter_vD(cloud_msgDetect,"v");
+            sensor_msgs::PointCloud2Iterator<float> iter_rD(cloud_msgDetect,"r");
+            sensor_msgs::PointCloud2Iterator<int8_t> iter_RCSD(cloud_msgDetect,"RCS");
+            sensor_msgs::PointCloud2Iterator<float> iter_azimuthD(cloud_msgDetect,"azimuth");
+            sensor_msgs::PointCloud2Iterator<float> iter_elevationD(cloud_msgDetect,"elevation");
             //Object Iterators
             sensor_msgs::PointCloud2Iterator<float> iter_x(cloud_msgObj,"x");
             sensor_msgs::PointCloud2Iterator<float> iter_y(cloud_msgObj,"y");
@@ -624,13 +629,21 @@ class ars548_driver : public rclcpp::Node{
                     fillDetectionMessage(detectionMessage,detectionList,clock);
                         
                         //Changes all of the > 8bit data to little endian inside the 800 elements array
-                        for(uint64_t i=0; i<detectionList.List_NumOfDetections;i++,++iter_xD,++iter_yD,++iter_zD){
-                            posX=detectionList.List_Detections[i].f_Range*float(std::cos(detectionList.List_Detections[i].f_ElevationAngle))*float(std::cos(detectionList.List_Detections[i].f_AzimuthAngle));
-                            posY=detectionList.List_Detections[i].f_Range*float(std::cos(detectionList.List_Detections[i].f_ElevationAngle))*float(std::sin(detectionList.List_Detections[i].f_AzimuthAngle));
-                            posZ=detectionList.List_Detections[i].f_Range*float(std::sin(detectionList.List_Detections[i].f_ElevationAngle));
-                            *iter_xD=posX;
-                            *iter_yD=posY;
-                            *iter_zD=posZ;
+                        for(uint64_t i = 0; i < detectionList.List_NumOfDetections;i++,++iter_xD,++iter_yD,++iter_zD,
+                                                                                   ++iter_vD, ++iter_rD, ++iter_RCSD,
+                                                                                   ++iter_azimuthD, ++iter_elevationD){
+                            posX = detectionList.List_Detections[i].f_Range*float(std::cos(detectionList.List_Detections[i].f_ElevationAngle))*float(std::cos(detectionList.List_Detections[i].f_AzimuthAngle));
+                            posY = detectionList.List_Detections[i].f_Range*float(std::cos(detectionList.List_Detections[i].f_ElevationAngle))*float(std::sin(detectionList.List_Detections[i].f_AzimuthAngle));
+                            posZ = detectionList.List_Detections[i].f_Range*float(std::sin(detectionList.List_Detections[i].f_ElevationAngle));
+                            *iter_xD = posX;
+                            *iter_yD = posY;
+                            *iter_zD = posZ;
+                            *iter_rD = detectionList.List_Detections[i].f_Range;
+                            *iter_vD = detectionList.List_Detections[i].f_RangeRate;
+                            *iter_RCSD = detectionList.List_Detections[i].s_RCS;
+                            *iter_azimuthD = detectionList.List_Detections[i].f_AzimuthAngle;
+                            *iter_elevationD = detectionList.List_Detections[i].f_ElevationAngle;
+
                         }
                         pubDetect->publish(cloud_msgDetect);
                         detectionsPublisher->publish(detectionMessage);
@@ -677,7 +690,12 @@ class ars548_driver : public rclcpp::Node{
         modifierDetection.setPointCloud2Fields(3,
             "x",1,sensor_msgs::msg::PointField::FLOAT32,
             "y",1,sensor_msgs::msg::PointField::FLOAT32,
-            "z",1,sensor_msgs::msg::PointField::FLOAT32
+            "z",1,sensor_msgs::msg::PointField::FLOAT32,
+            "v",1,sensor_msgs::msg::PointField::FLOAT32,
+            "r",1,sensor_msgs::msg::PointField::FLOAT32,
+            "RCS",1,sensor_msgs::msg::PointField::INT8,
+            "azimuth",1,sensor_msgs::msg::PointField::FLOAT32,
+            "elevation",1,sensor_msgs::msg::PointField::FLOAT32
         );
         modifierDetection.reserve(SIZE);
         modifierDetection.clear();
