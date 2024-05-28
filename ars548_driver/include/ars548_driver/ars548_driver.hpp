@@ -13,14 +13,13 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
-#include "rclcpp/rclcpp.hpp"
-#include <sensor_msgs/point_cloud2_iterator.hpp>
-#include <geometry_msgs/msg/pose_array.hpp>
+#include <sensor_msgs/point_cloud2_iterator.h>
+#include <geometry_msgs/PoseArray.h>
+#include <tf/tf.h>
 
-#include "ars548_messages/msg/status.hpp"
-#include "ars548_messages/msg/detection_list.hpp"
-#include "ars548_messages/msg/object_list.hpp"
+#include "ars548_messages/Status.h"
+#include "ars548_messages/DetectionList.h"
+#include "ars548_messages/ObjectList.h"
 #include "ars548_data.h"
 using namespace std::chrono_literals;
 
@@ -44,6 +43,7 @@ using namespace std::chrono_literals;
 #define OBJECT_MESSAGE_PAYLOAD 9401
 #define DETECTION_MESSAGE_PAYLOAD 35336
 /**
+
  * @brief POINTCLOUD_HEIGHT = 1 because the pointcloud is unordered.
  */
 #define POINTCLOUD_HEIGHT 1
@@ -53,7 +53,7 @@ using namespace std::chrono_literals;
 
 #define SIZE 1000
 
-class ars548_driver : public rclcpp::Node{    
+class ARS548Driver{    
     
     private:
     int methodID;
@@ -62,12 +62,12 @@ class ars548_driver : public rclcpp::Node{
     int nbytes;
     float AbsVel;
     std::string answer;
-    std::shared_ptr<rclcpp::ParameterEventHandler> param_subscriber_;
-    std::shared_ptr<rclcpp::ParameterCallbackHandle> cb_handle_;
+
+  std::unique_ptr<ros::NodeHandle> nh;
     
-    sensor_msgs::msg::PointCloud2 cloud_msgObj;
-    sensor_msgs::msg::PointCloud2 cloud_msgDetect;
-    geometry_msgs::msg::PoseArray cloud_Direction;
+    sensor_msgs::PointCloud2 cloud_msgObj;
+    sensor_msgs::PointCloud2 cloud_msgDetect;
+    geometry_msgs::PoseArray cloud_Direction;
 
     sensor_msgs::PointCloud2Modifier modifierObject;
     sensor_msgs::PointCloud2Modifier modifierDetection;
@@ -238,7 +238,7 @@ class ars548_driver : public rclcpp::Node{
      * @param status The Status struct used to fill the message.
      * 
      */
-    void fillStatusMessage(ars548_messages::msg::Status &statusMessage, UDPStatus status){
+    void fillStatusMessage(ars548_messages::Status &statusMessage, UDPStatus status){
         statusMessage.cycletime=status.CycleTime;
         statusMessage.configurationcounter=status.ConfigurationCounter;
         statusMessage.frequencyslot=status.FrequencySlot;
@@ -284,7 +284,7 @@ class ars548_driver : public rclcpp::Node{
      * @param clock The clock used to fill the timestamp of the message.
      * 
      */
-    void fillMessageObject(ars548_messages::msg::ObjectList &objectMessage,Object_List object_List,rclcpp::Clock clock){
+    void fillMessageObject(ars548_messages::ObjectList &objectMessage,Object_List object_List){
         objectMessage.crc=object_List.CRC;
         objectMessage.length=object_List.Length;
         objectMessage.sqc=object_List.SQC;
@@ -297,7 +297,7 @@ class ars548_driver : public rclcpp::Node{
         objectMessage.timestamp_syncstatus=object_List.Timestamp_SyncStatus;
         
         objectMessage.header.frame_id=this->frame_ID;
-        objectMessage.header.stamp=clock.now();
+        objectMessage.header.stamp=ros::Time::now();
         for(u_int32_t i =0; i<object_List.ObjectList_NumOfObjects;++i){
             objectMessage.objectlist_objects[i].u_statussensor=object_List.ObjectList_Objects[i].u_StatusSensor;
             objectMessage.objectlist_objects[i].u_id=object_List.ObjectList_Objects[i].u_ID;
@@ -373,9 +373,9 @@ class ars548_driver : public rclcpp::Node{
      * @param detectionList The DetectionList struct used to fill the message.
      * @param clock The clock used to fill the timestamp of the message.
      */
-    void fillDetectionMessage(ars548_messages::msg::DetectionList &detectionMessage,DetectionList detectionList,rclcpp::Clock clock){
+    void fillDetectionMessage(ars548_messages::DetectionList &detectionMessage,DetectionList detectionList){
         detectionMessage.header.frame_id=this->frame_ID;
-        detectionMessage.header.stamp=clock.now();
+        detectionMessage.header.stamp=ros::Time::now();
         detectionMessage.aln_status=detectionList.Aln_Status;
         detectionMessage.crc=detectionList.CRC;
         detectionMessage.dataid=detectionList.DataID;
@@ -430,13 +430,10 @@ class ars548_driver : public rclcpp::Node{
      * 
      * @param cloud_msg The PointCloud2 message that is going to be filled.
      */
-    void fillCloudMessage(sensor_msgs::msg::PointCloud2 &cloud_msg){
-        cloud_msg.header=std_msgs::msg::Header();
+    void fillCloudMessage(sensor_msgs::PointCloud2 &cloud_msg){
+        cloud_msg.header=std_msgs::Header();
         cloud_msg.header.frame_id=this->frame_ID;
-        std::chrono::time_point<std::chrono::system_clock> now=std::chrono::system_clock::now();
-        auto duration=now.time_since_epoch();
-        cloud_msg.header.stamp.nanosec=std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count();
-        cloud_msg.header.stamp.sec=std::chrono::duration_cast<std::chrono::seconds>(duration).count();
+        cloud_msg.header.stamp=ros::Time::now();
         cloud_msg.is_dense=false;
         cloud_msg.is_bigendian=false;
         cloud_msg.height=POINTCLOUD_HEIGHT;
@@ -449,13 +446,12 @@ class ars548_driver : public rclcpp::Node{
      * @param i The iterator used to fill the array of poses with the values of the points obtained from the struct.
      * @return PoseArray.msg. The message filled. 
      */
-    void fillDirectionMessage(geometry_msgs::msg::PoseArray &cloud_Direction,Object_List object_List,u_int32_t i){
+    void fillDirectionMessage(geometry_msgs::PoseArray &cloud_Direction,Object_List object_List,u_int32_t i){
         tf2::Quaternion q;
         float yaw;
-        cloud_Direction.header = std_msgs::msg::Header();
+        cloud_Direction.header = std_msgs::Header();
         cloud_Direction.header.frame_id=this->frame_ID;
-        cloud_Direction.header.stamp.nanosec=std::chrono::nanoseconds().count();
-        cloud_Direction.header.stamp.sec=std::chrono::seconds().count();
+        cloud_Direction.header.stamp=ros::Time::now();
         cloud_Direction.poses[i].position.x = double(object_List.ObjectList_Objects[i].u_Position_X);
         cloud_Direction.poses[i].position.y = double(object_List.ObjectList_Objects[i].u_Position_Y);
         cloud_Direction.poses[i].position.z = double(object_List.ObjectList_Objects[i].u_Position_Z);
@@ -472,20 +468,19 @@ class ars548_driver : public rclcpp::Node{
      * @param clock The ROS2 clock used to fill some of the fields of the messages.
      * @return The status of the connection. If it returns 1, there is an error in the execution.
      */
-    int readData(rclcpp::Clock clock){
-        auto node=rclcpp::Node::make_shared("publisherObj");
+    int readData(){
         //These are the publishers that send the data in a custom message
-        auto statusPublisher=node->create_publisher<ars548_messages::msg::Status>("Status",10);
-        auto objectPublisher=node->create_publisher<ars548_messages::msg::ObjectList>("ObjectList",10);
-        auto detectionsPublisher=node->create_publisher<ars548_messages::msg::DetectionList>("DetectionList",10);
+        auto statusPublisher = nh->advertise<ars548_messages::Status>("Status",10);
+        auto objectPublisher = nh->advertise<ars548_messages::ObjectList>("ObjectList",10);
+        auto detectionsPublisher = nh->advertise<ars548_messages::DetectionList>("DetectionList",10);
         //These are the publishers that send the data to Rviz2
-        auto directionPublisher=node->create_publisher<geometry_msgs::msg::PoseArray>("DirectionVelocity",10);
-        auto pubObj= node->create_publisher<sensor_msgs::msg::PointCloud2>("PointCloudObject",10);
-        auto pubDetect=node->create_publisher<sensor_msgs::msg::PointCloud2>("PointCloudDetection",10);
+        auto directionPublisher = nh->advertise<geometry_msgs::PoseArray>("DirectionVelocity",10);
+        auto pubObj= nh->advertise<sensor_msgs::PointCloud2>("PointCloudObject",10);
+        auto pubDetect=nh->advertise<sensor_msgs::PointCloud2>("PointCloudDetection",10);
         //Create messages for the publishers
-        auto statusMessage=ars548_messages::msg::Status();
-        auto detectionMessage=ars548_messages::msg::DetectionList();
-        auto objectMessage=ars548_messages::msg::ObjectList(); 
+        auto statusMessage=ars548_messages::Status();
+        auto detectionMessage=ars548_messages::DetectionList();
+        auto objectMessage=ars548_messages::ObjectList(); 
         
         fd= socket(AF_INET, SOCK_DGRAM, 0);
         if (fd < 0) {
@@ -577,7 +572,7 @@ class ars548_driver : public rclcpp::Node{
                 if(status.MethodID==STATUS_MESSAGE_METHOD_ID && status.PayloadLength==STATUS_MESSAGE_PDU_LENGTH){
                     status=modifyStatus(status);
                     fillStatusMessage(statusMessage,status);
-                    statusPublisher->publish(statusMessage);
+                    statusPublisher.publish(statusMessage);
                 }
                 break;
             case OBJECT_MESSAGE_PAYLOAD:
@@ -592,7 +587,7 @@ class ars548_driver : public rclcpp::Node{
                         object_List=modifyObjectList(object_List);
                         modifierObject.resize(object_List.ObjectList_NumOfObjects);
                         cloud_Direction.poses.resize(object_List.ObjectList_NumOfObjects);
-                        fillMessageObject(objectMessage,object_List,clock);
+                        fillMessageObject(objectMessage,object_List);
                         
                         //Changes all of the > 8bit data to little endian inside the 50 element array
                         fillCloudMessage(cloud_msgObj);
@@ -607,9 +602,9 @@ class ars548_driver : public rclcpp::Node{
                             fillDirectionMessage(cloud_Direction,object_List,i);
                         } 
 
-                        pubObj->publish(cloud_msgObj);
-                        directionPublisher->publish(cloud_Direction);
-                        objectPublisher->publish(objectMessage);   
+                        pubObj.publish(cloud_msgObj);
+                        directionPublisher.publish(cloud_Direction);
+                        objectPublisher.publish(objectMessage);   
                 }
                 break;
             case DETECTION_MESSAGE_PAYLOAD:
@@ -626,7 +621,7 @@ class ars548_driver : public rclcpp::Node{
                 if(detectionList.MethodID==DETECTION_MESSAGE_METHOD_ID && detectionList.PayloadLength==DETECTION_MESSAGE_PDU_LENGTH){
                     detectionList=modifyDetectionList(detectionList);
                     modifierDetection.resize(static_cast<size_t> (detectionList.List_NumOfDetections));
-                    fillDetectionMessage(detectionMessage,detectionList,clock);
+                    fillDetectionMessage(detectionMessage,detectionList);
                         
                         //Changes all of the > 8bit data to little endian inside the 800 elements array
                         for(uint64_t i = 0; i < detectionList.List_NumOfDetections;i++,++iter_xD,++iter_yD,++iter_zD,
@@ -645,8 +640,8 @@ class ars548_driver : public rclcpp::Node{
                             *iter_elevationD = detectionList.List_Detections[i].f_ElevationAngle;
 
                         }
-                        pubDetect->publish(cloud_msgDetect);
-                        detectionsPublisher->publish(detectionMessage);
+                        pubDetect.publish(cloud_msgDetect);
+                        detectionsPublisher.publish(detectionMessage);
    
                 }             
                 break;
@@ -663,46 +658,44 @@ class ars548_driver : public rclcpp::Node{
     /**
      * @brief  ars548_driver Node. Used to try the driver. 
      */
-    ars548_driver():Node("ars_548_driver_with_parameters"),modifierObject(cloud_msgObj),modifierDetection(cloud_msgDetect){
-        //Parameter declaration so the user can change them
-        this->declare_parameter("radarIP",DEFAULT_RADAR_IP);
-        this->declare_parameter("radarPort",DEFAULT_RADAR_PORT);
-        this->declare_parameter("frameID",DEFAULT_FRAME_ID);
-        rclcpp::Clock clock;
-        this->ars548_IP=this->get_parameter("radarIP").as_string();
-        this->ars548_Port=this->get_parameter("radarPort").as_int();
-        this->frame_ID=this->get_parameter("frameID").as_string();
-        //Creation of their modifiers
-        
-        //Set fields and size of every PointCloud
-        //Object Cloud
-         modifierObject.setPointCloud2Fields(5,
-            "x",1,sensor_msgs::msg::PointField::FLOAT32,
-            "y",1,sensor_msgs::msg::PointField::FLOAT32,
-            "z",1,sensor_msgs::msg::PointField::FLOAT32,
-            "vx",1,sensor_msgs::msg::PointField::FLOAT32,
-            "vy",1,sensor_msgs::msg::PointField::FLOAT32
-        );
-     
-        modifierObject.reserve(SIZE);
-        modifierObject.clear();
-        //Detection Cloud
-        modifierDetection.setPointCloud2Fields(3,
-            "x",1,sensor_msgs::msg::PointField::FLOAT32,
-            "y",1,sensor_msgs::msg::PointField::FLOAT32,
-            "z",1,sensor_msgs::msg::PointField::FLOAT32,
-            "v",1,sensor_msgs::msg::PointField::FLOAT32,
-            "r",1,sensor_msgs::msg::PointField::FLOAT32,
-            "RCS",1,sensor_msgs::msg::PointField::INT8,
-            "azimuth",1,sensor_msgs::msg::PointField::FLOAT32,
-            "elevation",1,sensor_msgs::msg::PointField::FLOAT32
-        );
-        modifierDetection.reserve(SIZE);
-        modifierDetection.clear();
-        cloud_Direction.poses.reserve(SIZE);
-        //handler subscription to the three callbacks so we can see if they have been changed
-        readData(clock);
+  ARS548Driver():modifierObject(cloud_msgObj),modifierDetection(cloud_msgDetect){
+    //Parameter declaration so the user can change them
+    nh.reset(new ros::NodeHandle("~"));
 
-    }
+    nh->param("radarIP",ars548_IP, static_cast<std::string>(DEFAULT_RADAR_IP));
+    nh->param("radarPort", ars548_Port, DEFAULT_RADAR_PORT);
+    nh->param("frameID",frame_ID, static_cast<std::string>(DEFAULT_FRAME_ID));
+
+    //Creation of their modifiers
+
+    //Set fields and size of every PointCloud
+    //Object Cloud
+    modifierObject.setPointCloud2Fields(5,
+                                        "x",1,sensor_msgs::PointField::FLOAT32,
+                                        "y",1,sensor_msgs::PointField::FLOAT32,
+                                        "z",1,sensor_msgs::PointField::FLOAT32,
+                                        "vx",1,sensor_msgs::PointField::FLOAT32,
+                                        "vy",1,sensor_msgs::PointField::FLOAT32
+                                        );
+    modifierObject.reserve(SIZE);
+    modifierObject.clear();
+
+    //Detection Cloud
+    modifierDetection.setPointCloud2Fields(3,
+                                           "x",1,sensor_msgs::PointField::FLOAT32,
+                                           "y",1,sensor_msgs::PointField::FLOAT32,
+                                           "z",1,sensor_msgs::PointField::FLOAT32,
+                                           "v",1,sensor_msgs::PointField::FLOAT32,
+                                           "r",1,sensor_msgs::PointField::FLOAT32,
+                                           "RCS",1,sensor_msgs::PointField::INT8,
+                                           "azimuth",1,sensor_msgs::PointField::FLOAT32,
+                                           "elevation",1,sensor_msgs::PointField::FLOAT32
+                                           );
+    modifierDetection.reserve(SIZE);
+    modifierDetection.clear();
+    cloud_Direction.poses.reserve(SIZE);
+    //handler subscription to the three callbacks so we can see if they have been changed
+    readData();
+  }
     
 };

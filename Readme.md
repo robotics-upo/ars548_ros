@@ -2,21 +2,19 @@ ARS_548_RDI Driver:
 ================
 Introduction:
 ---
-This is a ROS 2 driver for the Continental ARS_548 Radar4d created by the Service Robotics Lab from the Pablo de Olavide University (Spain).
+This is a ROS driver for the Continental ARS_548 4D Radar created by the Service Robotics Lab from the Pablo de Olavide University (Spain). The driver is pending to be tested in ROS Noetic.
 
 This driver is used to connect with the ARS_548_RDI radar and get all of the data it sends.
 
 First of all, this driver connects with the radar via Ethernet.\
 Then it receives all the data the radar sends, translates it, and after that, it sends it in the structure of custom messages for the user to receive and interact with them.
 
-This driver also creates two Point Clouds and a pose array with some of the information gathered and shows it using rviz 2.
+This driver also creates two Point Clouds and a pose array with some of the information gathered and shows it using RViz 2.
 
 About the code:
 ---
 This project is divided in two packages: ARS548_DRIVER and ARS548_MESSAGES.
 
-In this part of the document I will briefly talk about every file telling the user about what it does. 
-Firstly we will talk about the files inside the package ars548_driver, and next, we will talk about the ones inside ars548_messages
 * ### ars548_driver.
     This package contains all of the code used to obtain the data from the radar, decode it and send it for the user to interact with it. 
     * ### ars548_driver.hpp
@@ -46,10 +44,10 @@ Firstly we will talk about the files inside the package ars548_driver, and next,
     * ### Configurer.sh
         This file creates a connection to the default radar direction when executed. 
 
-    * ### ars548_launch.xml
+    * ### ars548.launch
         This is the file we will be executing using the following command:
         ```
-        ros2 launch ars548_driver ars548_launch.xml
+        roslaunch ars548_driver ars548.launch
         ```
         Inside this file we create three nodes that will be executed.
         * The first node is the one that executes the code created in this project.\
@@ -62,7 +60,7 @@ Firstly we will talk about the files inside the package ars548_driver, and next,
         * The second node opens an rviz 2 window to visualize the data received from the radar.\
         This node uses the **RadarVisualization.rviz** file to configure the window.
 
-        * The third and last node creates an static-transform-publisher to transform the data obtained from the radar to the data shown in rviz 2 (You can also change the arguments so it adapts to your project).
+        * The third and last node creates an static-transform-publisher to transform the data obtained from the radar to the data shown in RViz (You can also change the arguments so it adapts to your project).
         
 * ### ars548_messages
     This package contains all of the structures for the custom messages sent to the user.
@@ -76,37 +74,31 @@ Firstly we will talk about the files inside the package ars548_driver, and next,
         This file has the data structure for the list of object messages. It has an array of messages from the Object.msg file
     * ### DetectionList.msg
         This file has the data structure for the list of detection messages. It has an array of messages from the Detection.msg file.
-    * ### The rest of files are the messages to configure the radar. (They are unused in this project)
+    * ### The rest of files are the messages to configure the radar. (They are unused in this project yet)
 
     
 Before Downloading the code:
 ---
 For the code to Work properly you must first do this steps.
 
-- Have ros 2, rviz 2, tf2 and colcon installed.
+- Have ROS Noetic, RViz, tf2 and catkin installed.
 - Configure the Network connection with the radar.
 
-In this file, we are working with the **ROS 2 Humble** distribution on Ubuntu 22.04, so all of the ROS 2 commands that we will be using are from this particular distribution. In case you use another ROS 2 distribution, this commands may change a bit.
+In this file, we are working with the **ROS Noetic** distribution on Ubuntu 20.04, so all of the ROS commands that we will be using are from this particular distribution. In case you use another ROS distribution, this commands may change a bit.
 
-* ### Install ROS 2:
-    To install ROS 2 you can follow this tutorial: <https://docs.ros.org/en/humble/Installation.html>
+* ### Install ROS:
+    To install ROS you can follow this tutorial: <https://docs.ros.org/en/noetic/Installation.html>
 
-* ### Install RVIZ 2:
+* ### Install RVIZ:
     This tool will be used to show the pointClouds that this driver will create to test it.\
-    To install RVIZ 2, run this command on your terminal:
+    To install RVIZ, run this command on your terminal:
     ```
-    sudo apt-get install ros-humble-rviz2 
+    sudo apt-get install ros-noetic-rviz
     ```
 * ### Install TF 2:
     To install TF 2 and all of its tools, run the next command on your terminal: 
     ```
-    sudo apt-get install ros-humble-tf2-ros ros-humble
-    ```
-* ### Install Colcon:
-    This tool is used to build ROS packages.\
-    To install Colcon, execute the following command on your computer:
-    ```
-    sudo apt install python3-colcon-common-extensions
+    sudo apt-get install ros-noetic-tf2-ros 
     ```
 
 * ### Configure the Network to connect with the radar:
@@ -160,19 +152,19 @@ In this file, we are working with the **ROS 2 Humble** distribution on Ubuntu 22
 
 How to execute the driver
 ---
-Once you have installed ROS 2, Rviz 2, Tf 2, colcon, configured your network and downloaded the project, you can execute this driver.
+Once you have installed ROS, Rviz, Tf, configured your network and downloaded the project, you can execute this driver.
 
 For executing the driver you should go to the directory in wich you have downloaded this project and execute the next commands:
 
 * ```
-    colcon build --packages-select ars548_driver ars548_messages
+    catkin_make
   ```
 * ```
-    source install/setup.bash
+    source devel/setup.bash
   ```
 * ``` 
-    ros2 launch ars548_driver ars548_launch.xml
+    roslaunch ars548_driver ars548.launch
   ```
-The first command is used to build the project.\
-The second command is used to source the project.\
-The last command is used to launch the project and see the results in Rviz 2.
+The first command is used to build the workspace.\
+The second command is used to source the workspace.\
+The last command is used to launch the project and see the results in RViz.

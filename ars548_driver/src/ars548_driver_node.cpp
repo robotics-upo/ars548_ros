@@ -1,14 +1,22 @@
 /**
- * @file ars548_driverNode.cpp 
+ * @file ars548_driver_node.cpp 
  */
-#include "rclcpp/rclcpp.hpp"
-#include "../include/ars548_driver/ars548_driver.hpp"
+#include "ros/ros.h"
+#include "ars548_driver/ars548_driver.hpp"
 
 int main(int argc,char* argv[]){
-    rclcpp::init(argc,argv);
-    rclcpp::spin(std::make_shared<ars548_driver>());
-    rclcpp::shutdown();
-    return 0;
+  ros::init(argc,argv, "ars548_driver_node");
+
+  ARS548Driver driver;
+
+  ros::Rate loop_rate(100);
+
+  while (ros::ok()) {
+    ros::spinOnce();
+    loop_rate.sleep();
+  }
+
+  return 0;
 }
 
 

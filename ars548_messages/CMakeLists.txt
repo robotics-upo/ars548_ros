@@ -6,37 +6,26 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # find dependencies
-find_package(ament_cmake REQUIRED)
-find_package(rosidl_default_generators REQUIRED)
-find_package(std_msgs)
+find_package(
+  catkin REQUIRED
+  COMPONENTS message_generation
+             std_msgs)
 
-rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/Detection.msg"
-  "msg/DetectionList.msg"
-  "msg/Object.msg"
-  "msg/ObjectList.msg"
-  "msg/Status.msg"
-  "msg/AccelerationLateralCoG.msg"
-  "msg/AccelerationLongitudinalCoG.msg"
-  "msg/CharacteristicSpeed.msg"
-  "msg/DrivingDirection.msg"
-  "msg/SensorConfiguration.msg"
-  "msg/SteeringAngleFrontAxle.msg"
-  "msg/VelocityVehicle.msg"
-  "msg/YawRate.msg"
-  DEPENDENCIES std_msgs
-  )
+add_message_files(FILES 
+  Detection.msg  DetectionList.msg Object.msg ObjectList.msg Status.msg AccelerationLateralCoG.msg
+  AccelerationLongitudinalCoG.msg CharacteristicSpeed.msg DrivingDirection.msg SensorConfiguration.msg
+  SteeringAngleFrontAxle.msg VelocityVehicle.msg YawRate.msg   )
 
-if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  # comment the line when a copyright and license is added to all source files
-  set(ament_cmake_copyright_FOUND TRUE)
-  # the following line skips cpplint (only works in a git repo)
-  # comment the line when this package is in a git repo and when
-  # a copyright and license is added to all source files
-  set(ament_cmake_cpplint_FOUND TRUE)
-  ament_lint_auto_find_test_dependencies()
-endif()
+generate_messages(DEPENDENCIES std_msgs)
 
-ament_package()
+catkin_package(
+  CATKIN_DEPENDS
+    message_runtime
+    std_msgs
+)
+
+install(TARGETS
+   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
