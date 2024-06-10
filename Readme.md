@@ -57,10 +57,10 @@ This project consists of two ROS2 packages: ars548_driver and ars548_messages. B
             * The connection Port.
             * The Frame ID that we will use to send the messages.
 
-        * The second node opens an rviz 2 window to visualize the data received from the radar.\
+        * The second node opens an RViz 2 window to visualize the data received from the radar.\
         This node uses the **RadarVisualization.rviz** file to configure the window.
 
-        * The third and last node creates an static-transform-publisher to transform the data obtained from the radar to the data shown in rviz 2 (You can also change the arguments so it adapts to your project).
+        * The third and last node creates an static-transform-publisher to transform the data obtained from the radar to the data shown in RViz 2 (You can also change the arguments so it adapts to your project).
         
 * ### ars548_messages
     This package contains all of the structures for the custom messages sent to the user.
@@ -81,7 +81,7 @@ Before Downloading the code:
 ---
 For the code to Work properly you must first do these steps.
 
-- Have ros 2, rviz 2, tf2 and colcon installed.
+- Have ROS2, RViz 2, Tf2 and colcon installed.
 - Configure the Network connection with the radar.
 
 In this file, we are working with the **ROS 2 Humble** distribution on Ubuntu 22.04, so all of the ROS2 commands that we will be using are from this particular distribution. In case you use another ROS 2 distribution, this commands may change a bit.
@@ -151,14 +151,14 @@ In this file, we are working with the **ROS 2 Humble** distribution on Ubuntu 22
         ```
         ./Configurer.sh
         ```  
-        Once you execute the command, the program will ask you if you want to create the vlan connection and after that it will ask you to introduce the parent interface you want to use to create the connection.(It must be your phisical interface, otherwise it wont work)\
+        Once you execute the command, the program will ask you if you want to create the vlan connection and after that it will ask you to introduce the parent interface you want to use to create the connection.(It must be your physical interface, otherwise it won't work).\
         After all that it will create the connection with the radar using the default values for the network.
     
     If you configure it manually, you will have to make this process just once. If you do it executing the **Configurer.sh** file, you will have to do it everytime you turn on your computer.
 
 How to execute the driver
 ---
-Once you have installed ROS2, Rviz 2, Tf 2, colcon, configured your network and downloaded the project, you can execute this driver.
+Once you have installed ROS2, RViz 2, Tf 2, colcon, configured your network and downloaded the project, you can execute this driver.
 
 For executing the driver you should go to the directory in wich you have downloaded this project and execute the next commands:
 
