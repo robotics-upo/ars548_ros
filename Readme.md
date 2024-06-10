@@ -1,22 +1,20 @@
-ARS_548_RDI Driver:
+ARS_548_RDI Driver
 ================
-Introduction:
+Introduction
 ---
-This is a ROS 2 driver for the Continental ARS_548 Radar4d created by the Service Robotics Lab from the Pablo de Olavide University (Spain).
+This is a ROS 2 driver for the Continental ARS_548 Radar4d created by the Service Robotics Lab from the Pablo de Olavide University (Spain). For the ROS driver, please refer to the "noetic" branch of this repository.
 
 This driver is used to connect with the ARS_548_RDI radar and get all of the data it sends.
 
 First of all, this driver connects with the radar via Ethernet.\
 Then it receives all the data the radar sends, translates it, and after that, it sends it in the structure of custom messages for the user to receive and interact with them.
 
-This driver also creates two Point Clouds and a pose array with some of the information gathered and shows it using rviz 2.
+This driver also creates two Point Clouds and a pose array with some of the information gathered and shows it using RViz 2.
 
 About the code:
 ---
-This project is divided in two packages: ARS548_DRIVER and ARS548_MESSAGES.
+This project consists of two ROS2 packages: ars548_driver and ars548_messages. Below you can find a brief description of each package.
 
-In this part of the document I will briefly talk about every file telling the user about what it does. 
-Firstly we will talk about the files inside the package ars548_driver, and next, we will talk about the ones inside ars548_messages
 * ### ars548_driver.
     This package contains all of the code used to obtain the data from the radar, decode it and send it for the user to interact with it. 
     * ### ars548_driver.hpp
@@ -81,12 +79,12 @@ Firstly we will talk about the files inside the package ars548_driver, and next,
     
 Before Downloading the code:
 ---
-For the code to Work properly you must first do this steps.
+For the code to Work properly you must first do these steps.
 
 - Have ros 2, rviz 2, tf2 and colcon installed.
 - Configure the Network connection with the radar.
 
-In this file, we are working with the **ROS 2 Humble** distribution on Ubuntu 22.04, so all of the ROS 2 commands that we will be using are from this particular distribution. In case you use another ROS 2 distribution, this commands may change a bit.
+In this file, we are working with the **ROS 2 Humble** distribution on Ubuntu 22.04, so all of the ROS2 commands that we will be using are from this particular distribution. In case you use another ROS 2 distribution, this commands may change a bit.
 
 * ### Install ROS 2:
     To install ROS 2 you can follow this tutorial: <https://docs.ros.org/en/humble/Installation.html>
@@ -160,18 +158,14 @@ In this file, we are working with the **ROS 2 Humble** distribution on Ubuntu 22
 
 How to execute the driver
 ---
-Once you have installed ROS 2, Rviz 2, Tf 2, colcon, configured your network and downloaded the project, you can execute this driver.
+Once you have installed ROS2, Rviz 2, Tf 2, colcon, configured your network and downloaded the project, you can execute this driver.
 
 For executing the driver you should go to the directory in wich you have downloaded this project and execute the next commands:
 
-* ```
-    colcon build --packages-select ars548_driver ars548_messages
-  ```
-* ```
-    source install/setup.bash
-  ```
-* ``` 
-    ros2 launch ars548_driver ars548_launch.xml
+ ```
+    > colcon build --packages-select ars548_driver ars548_messages
+    > source install/setup.bash
+    > ros2 launch ars548_driver ars548_launch.xml
   ```
 The first command is used to build the project.\
 The second command is used to source the project.\
