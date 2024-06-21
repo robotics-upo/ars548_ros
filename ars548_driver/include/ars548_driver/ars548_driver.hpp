@@ -681,7 +681,7 @@ class ARS548Driver{
     modifierObject.clear();
 
     //Detection Cloud
-    modifierDetection.setPointCloud2Fields(3,
+    modifierDetection.setPointCloud2Fields(8,
                                            "x",1,sensor_msgs::PointField::FLOAT32,
                                            "y",1,sensor_msgs::PointField::FLOAT32,
                                            "z",1,sensor_msgs::PointField::FLOAT32,
