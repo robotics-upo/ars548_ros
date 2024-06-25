@@ -14,14 +14,19 @@ find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 
+
 add_executable(ars548_driver src/ars548_driver_node.cpp)
 ament_target_dependencies(ars548_driver rclcpp ars548_messages sensor_msgs tf2_geometry_msgs)
 
 add_executable(ars548_driver_filter src/ars548_driver_filter.cpp)
 ament_target_dependencies(ars548_driver_filter rclcpp sensor_msgs ars548_messages tf2_geometry_msgs) 
 
+add_executable(radar_setup src/radar_setup.cpp)
+ament_target_dependencies(radar_setup tf2_geometry_msgs sensor_msgs ars548_messages)
+
 install(TARGETS
   ars548_driver
+  radar_setup
   ars548_driver_filter
   DESTINATION lib/${PROJECT_NAME}
 )

@@ -84,13 +84,14 @@ class ars548_driver : public rclcpp::Node{
         int nbytes=sendto(fd,&data,8+sizeof(data),0,(struct sockaddr *) &addr,sizeof(addr));
         return nbytes;
     }
+    public:
     /**
      * @brief Changes the endianness of the object received 
      * @tparam v The object to be modified.
      * @return T. The object modified.
      */
     template<typename T>
-    T ChangeEndianness(T v){
+    static T ChangeEndianness(T v){
         T r;
         uint8_t *pv = (uint8_t *)&v, *pr = (uint8_t *)&r;
         for (int i = 0;i <int(sizeof(T)); i++){
@@ -104,7 +105,7 @@ class ars548_driver : public rclcpp::Node{
      * @param status The UDPStatus struct that is going to be modified.
      * @return UDPStatus The modified struct. 
      */
-    UDPStatus modifyStatus(UDPStatus status){
+    static UDPStatus modifyStatus(UDPStatus status){
         status.Timestamp_Nanoseconds=ChangeEndianness(status.Timestamp_Nanoseconds);
         status.Timestamp_Seconds=ChangeEndianness(status.Timestamp_Seconds);
         status.Longitudinal=ChangeEndianness(status.Longitudinal);
@@ -121,6 +122,7 @@ class ars548_driver : public rclcpp::Node{
         status.SensorIPAddress_1=ChangeEndianness(status.SensorIPAddress_1);
         return status;
     }
+    private:
     /**
      * @brief Changes the endiannes of the Object_List struct
      *  
@@ -466,6 +468,7 @@ class ars548_driver : public rclcpp::Node{
         cloud_Direction.poses[i].orientation.z=q.z();
         cloud_Direction.poses[i].orientation.w=q.w();
     }
+    
     /**
      * @brief Reads the data received from the radar and sends it to the user and Rviz2.
      * 
@@ -530,7 +533,7 @@ class ars548_driver : public rclcpp::Node{
             perror("setsockopt");
             return 1;
         }
-         unsigned int addrlen = sizeof(addr);
+        unsigned int addrlen = sizeof(addr);
         // now just enter a read-print loop
         //
         while (1)
@@ -569,13 +572,11 @@ class ars548_driver : public rclcpp::Node{
             switch (nbytes)
             {
             case STATUS_MESSAGE_PAYLOAD:
+
                 struct UDPStatus status;
                 status = *((struct UDPStatus *)msgbuf);
-                status.ServiceID=ChangeEndianness(status.ServiceID);
-                status.MethodID=ChangeEndianness(status.MethodID);
-                status.PayloadLength=ChangeEndianness(status.PayloadLength);
-                if(status.MethodID==STATUS_MESSAGE_METHOD_ID && status.PayloadLength==STATUS_MESSAGE_PDU_LENGTH){
-                    status=modifyStatus(status);
+                if(receiveStatusMsg(nbytes,msgbuf,status))
+                {
                     fillStatusMessage(statusMessage,status);
                     statusPublisher->publish(statusMessage);
                 }
@@ -656,9 +657,26 @@ class ars548_driver : public rclcpp::Node{
 
 
     public:
-    std::string ars548_IP;
+    static std::string ars548_IP;
     std::string frame_ID;
-    int ars548_Port;
+    static int ars548_Port;
+    /**
+     * 
+     */
+    static bool receiveStatusMsg(int nbytes,const char * buffer,struct UDPStatus& status){
+        if(nbytes==STATUS_MESSAGE_PAYLOAD)
+        {
+            status = *((struct UDPStatus *)buffer);
+            status.ServiceID=ChangeEndianness(status.ServiceID);
+            status.MethodID=ChangeEndianness(status.MethodID);
+            status.PayloadLength=ChangeEndianness(status.PayloadLength);
+            if(status.MethodID==STATUS_MESSAGE_METHOD_ID && status.PayloadLength==STATUS_MESSAGE_PDU_LENGTH){
+                status=modifyStatus(status);
+                return true;
+            }
+        }
+        return false;
+    }
    
     /**
      * @brief  ars548_driver Node. Used to try the driver. 
@@ -687,7 +705,7 @@ class ars548_driver : public rclcpp::Node{
         modifierObject.reserve(SIZE);
         modifierObject.clear();
         //Detection Cloud
-        modifierDetection.setPointCloud2Fields(3,
+        modifierDetection.setPointCloud2Fields(8,
             "x",1,sensor_msgs::msg::PointField::FLOAT32,
             "y",1,sensor_msgs::msg::PointField::FLOAT32,
             "z",1,sensor_msgs::msg::PointField::FLOAT32,
@@ -706,3 +724,5 @@ class ars548_driver : public rclcpp::Node{
     }
     
 };
+std::string ars548_driver::ars548_IP=DEFAULT_RADAR_IP;
+int ars548_driver::ars548_Port=DEFAULT_RADAR_PORT;
