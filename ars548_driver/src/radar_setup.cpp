@@ -1,6 +1,6 @@
 /**
  * @file ars548_change_ip.cpp
- * @brief In this file we try to change the radar IP using the according message.
+ * @brief In this file we try to change the radar Parameters using the according message. (Be carefull when changing the IP)
  * 
 */
 #include <sys/types.h>
@@ -13,8 +13,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "tclap/CmdLine.h"
-#include "../include/ars548_driver/ars548_driver.hpp"
-#include "../include/ars548_driver/ars548_data.h"
+#include "ars548_driver/ars548_driver.hpp"
+#include "ars548_driver/ars548_data.h"
 
 #define RADAR_INTERFACE "10.13.1.166"
 #define CONFIGURATION_SOURCE_PORT 42401
@@ -24,11 +24,215 @@
 #define CONFIGURATION_PDU_LENGTH 56
 #define CONFIGURATION_UDP_PAYLOAD 64
 #define CONFIGURATION_UDP_LENGTH 72
-
-#define DEFAULT_RADAR_IP "224.0.2.2"
 #define NEW_IP "0.0.0.0"
+#define RADAR_IP "10.13.1.113"
 
-static SensorConfiguration modifyConfiguration(SensorConfiguration c){
+
+static bool isConfigEqualsToStatus(SensorConfiguration c,UDPStatus s){
+    bool isEqual=true;
+    if (c.Longitudinal!=s.Longitudinal)
+        isEqual=false;
+    if (c.Lateral!=s.Lateral)
+        isEqual=false;
+    if (c.Vertical!=s.Vertical)
+        isEqual=false;
+    if (c.Yaw!=s.Yaw)
+        isEqual=false;
+    if (c.Pitch!=s.Pitch)
+        isEqual=false;
+    if (c.PlugOrientation!=s.PlugOrientation)
+        isEqual=false;
+    if (c.Length!=s.Length)
+        isEqual=false;
+    if (c.Width!=s.Width)
+        isEqual=false;
+    if (c.Height!=s.Height)
+        isEqual=false;
+    if (c.Wheelbase!=s.Wheelbase)
+        isEqual=false;
+    if(c.FrequencySlot!=s.FrequencySlot)
+        isEqual=false;
+    if (c.MaximumDistance!=s.MaximunDistance)
+        isEqual=false;
+    if(c.CycleTime!=s.CycleTime)
+        isEqual=false;
+    if (c.TimeSlot!=s.TimeSlot)
+        isEqual=false;
+    if (c.HCC!=s.HCC)
+        isEqual=false;
+    if(c.Powersave_Standstill!=s.Powersave_Standstill)
+        isEqual=false;
+    if(c.SensorIPAddress_0!=s.SensorIPAddress_0 && c.SensorIPAddress_0!=inet_addr(NEW_IP))
+        isEqual=false;
+    return isEqual;
+}
+
+static void printConfig(SensorConfiguration c)
+{
+    std::cout<<"Config: "<<std::endl;
+    std::cout<<"Longitudinal Pos: "<<c.Longitudinal<<std::endl;
+    std::cout<<"Lateral Pos: "<<c.Lateral<<std::endl;
+    std::cout<<"Vertical Pos: "<<c.Vertical<<std::endl;
+    std::cout<<"Yaw: "<<c.Yaw<<std::endl;
+    std::cout<<"Pitch: "<<c.Pitch<<std::endl;
+    if(c.PlugOrientation==1)
+    {
+        std::cout<<"Plug Orientation: LEFT"<<std::endl;
+    }else
+    {
+        std::cout<<"Plug Orientation: RIGHT"<<std::endl;
+    }
+    std::cout<<"Vehivle Length: "<<c.Length<<std::endl;
+    std::cout<<"Vehicle Width: "<<c.Width<<std::endl;
+    std::cout<<"Vehicle Height: "<<c.Height<<std::endl;
+    std::cout<<"Vehicle WheelBase: "<<c.Wheelbase<<std::endl;
+    std::cout<<"Max Detection Dist: "<<c.MaximumDistance<<std::endl;
+    switch (c.FrequencySlot)
+    {
+    case 0:
+        std::cout<<"Center Frequency: LOW"<<std::endl;
+        break;
+    case 1:
+        std::cout<<"Center Frequency: MID"<<std::endl;
+        break;
+    default:
+        std::cout<<"Center Frequency: HIGH"<<std::endl;
+        break;
+    }
+    std::cout<<"Cycle Time: "<<c.CycleTime<<std::endl;
+    std::cout<<"Cycle Offset: "<<(int)c.TimeSlot<<std::endl;
+    if(c.HCC==1)
+    {
+        std::cout<<"Country Code: WORLDWIDE"<<std::endl;
+    }else
+    {
+        std::cout<<"Country Code: JAPAN"<<std::endl;
+    }
+    if (c.Powersave_Standstill==1)
+    {
+        std::cout<<"Powersave Standstill: ON"<<std::endl;
+    }else
+    {
+        std::cout<<"Powersave Standstill: OFF"<<std::endl;
+    }
+    std::cout<<"Sensor IP Address 0: "<<c.SensorIPAddress_0<<std::endl;
+    std::cout<<"Sensor IP Address 1: "<<c.SensorIPAddress_1<<std::endl;
+    
+}
+static void printStatus(UDPStatus s)
+{
+    std::cout<<"Status: "<<std::endl;
+    std::cout<<"Longitudinal Pos: "<<s.Longitudinal<<std::endl;
+    std::cout<<"Lateral Pos: "<<s.Lateral<<std::endl;
+    std::cout<<"Vertical Pos: "<<s.Vertical<<std::endl;
+    std::cout<<"Yaw: "<<s.Yaw<<std::endl;
+    std::cout<<"Pitch: "<<s.Pitch<<std::endl;
+    if(s.PlugOrientation==1)
+    {
+        std::cout<<"Plug Orientation: LEFT"<<std::endl;
+    }else
+    {
+        std::cout<<"Plug Orientation: RIGHT"<<std::endl;
+    }
+    std::cout<<"Vehivle Length: "<<s.Length<<std::endl;
+    std::cout<<"Vehicle Width: "<<s.Width<<std::endl;
+    std::cout<<"Vehicle Height: "<<s.Height<<std::endl;
+    std::cout<<"Vehicle WheelBase: "<<s.Wheelbase<<std::endl;
+    std::cout<<"Max Detection Dist: "<<s.MaximunDistance<<std::endl;
+    switch (s.FrequencySlot)
+    {
+    case 0:
+        std::cout<<"Center Frequency: LOW"<<std::endl;
+        break;
+    case 1:
+        std::cout<<"Center Frequency: MID"<<std::endl;
+        break;
+    default:
+        std::cout<<"Center Frequency: HIGH"<<std::endl;
+        break;
+    }
+    std::cout<<"Cycle Time: "<<s.CycleTime<<std::endl;
+    std::cout<<"Cycle Offset: "<<(int)s.TimeSlot<<std::endl;
+    if(s.HCC==1)
+    {
+        std::cout<<"Country Code: WORLDWIDE"<<std::endl;
+    }else
+    {
+        std::cout<<"Country Code: JAPAN"<<std::endl;
+    }
+    if (s.Powersave_Standstill==1)
+    {
+        std::cout<<"Powersave Standstill: ON"<<std::endl;
+    }else
+    {
+        std::cout<<"Powersave Standstill: OFF"<<std::endl;
+    }
+    std::cout<<"Sensor IP Address 0: "<<s.SensorIPAddress_0<<std::endl;
+    std::cout<<"Sensor IP Address 1: "<<s.SensorIPAddress_1<<std::endl;
+    
+}
+
+/**
+ * @brief Checks if any of the data has been modified by the anchor.
+ * @param c The Sensor Configuration struct with the data sent by the user.
+ * @param s The UDP Status message used to get all of the default data of the radar.
+ */
+static SensorConfiguration changeConfiguration(SensorConfiguration c,UDPStatus s)
+{
+        //Check if the user wants to change the radar possition and orientation
+    if (c.Longitudinal!=s.Longitudinal)
+        c.NewSensorMounting=1;
+    if (c.Lateral!=s.Lateral)
+        c.NewSensorMounting=1;
+    if (c.Vertical!=s.Vertical)
+        c.NewSensorMounting=1;
+    if (c.Yaw!=s.Yaw)
+        c.NewSensorMounting=1;
+    if (c.Pitch!=s.Pitch)
+        c.NewSensorMounting=1;
+    if (c.PlugOrientation!=s.PlugOrientation)
+        c.NewSensorMounting=1;
+    
+    //Check if the user wants to change the vehicle characteristics
+    if (c.Length!=s.Length)
+        c.NewVehicleParameters=1;
+    if (c.Width!=s.Width)
+        c.NewVehicleParameters=1;
+    if (c.Height!=s.Height)
+        c.NewVehicleParameters=1;
+    if (c.Wheelbase!=s.Wheelbase)
+        c.NewVehicleParameters=1;
+    
+    //Check if the user wants to change the radar configuration
+    if(c.FrequencySlot!=s.FrequencySlot)
+        c.NewRadarParameters=1;
+    if (c.MaximumDistance!=s.MaximunDistance)
+    {
+        c.NewRadarParameters=1;
+        if (c.MaximumDistance<190 && c.FrequencySlot!=1)
+            c.FrequencySlot=1;
+    }
+    if(c.CycleTime!=s.CycleTime)
+        c.NewRadarParameters=1;
+    if (c.TimeSlot!=s.TimeSlot)
+        c.NewRadarParameters=1;
+    if (c.HCC!=s.HCC)
+        c.NewRadarParameters=1;
+    if(c.Powersave_Standstill!=s.Powersave_Standstill)
+        c.NewRadarParameters=1;
+
+    // Check if the user wants to change the radar IP.
+    if(c.SensorIPAddress_0!=s.SensorIPAddress_0 && c.SensorIPAddress_0!=inet_addr(NEW_IP))
+        c.NewNetworkConfiguration=1;
+    return c;
+}
+
+/**
+ * @brief Changes the endianness of each field of the sensor configuration struct.
+ * @param c The Sensor Configuration structure.
+ */
+static SensorConfiguration modifyConfiguration(SensorConfiguration c)
+{
     c.ServiceID=ars548_driver::ChangeEndianness(c.ServiceID);
     c.MethodID=ars548_driver::ChangeEndianness(c.MethodID);
     c.PayloadLength=ars548_driver::ChangeEndianness(c.PayloadLength);
@@ -45,7 +249,7 @@ static SensorConfiguration modifyConfiguration(SensorConfiguration c){
     c.MaximumDistance=ars548_driver::ChangeEndianness(c.MaximumDistance);
     c.FrequencySlot=ars548_driver::ChangeEndianness(c.FrequencySlot);
     c.CycleTime=ars548_driver::ChangeEndianness(c.CycleTime);
-    c.TimeSlot=ars548_driver::ChangeEndianness(c.FrequencySlot);
+    c.TimeSlot=ars548_driver::ChangeEndianness(c.TimeSlot);
     c.HCC=ars548_driver::ChangeEndianness(c.HCC);
     c.Powersave_Standstill=ars548_driver::ChangeEndianness(c.Powersave_Standstill);
     c.SensorIPAddress_0=ars548_driver::ChangeEndianness(c.SensorIPAddress_0);
@@ -57,76 +261,25 @@ static SensorConfiguration modifyConfiguration(SensorConfiguration c){
     return c;
 }
 
-/*class ars548_change_ip
-{
-    private:
-    rclcpp::Publisher<ars548_messages::msg::SensorConfiguration>::SharedPtr publisherConfig;
-    public:
-
-    ars548_change_ip(): Node("ars548_driver_change_ip")
-    {
-        
-        
-        publisherConfig=this->create_publisher<ars548_messages::msg::SensorConfiguration>("NewConfiguration",10);
-        
-            subscription_=this->create_subscription<ars548_messages::msg::SensorConfiguration>(
-            "confihurationCloud",10,std::bind(&ars548_change_ip::top));
-        
-    }
-};
-*/
-
-
 int main(int argc,char* argv[]){
-    int fd;
+    int fdr,fds;//One to receive the data of the radar, the other to send the data to it
     int nbytes;
     char msgbuf[MSGBUFSIZE];
     struct SensorConfiguration c;
-    //Modify elements of the radar 1==Modify, 0==Ignore
-    int modifyRadar=0;
-    int modifyNetwork=0;
-    int modifyPos=0;
-    int modifyVehicle=0;
-    
-    //Radar possition parameters
-    float longitudinal;
-    float lateral;
-    float vertical;
-    float yaw;
-    float pitch;
-    int plugOrientation;
-    
-    //Vehicle parameters
-    float length;
-    float width;
-    float height;
-    float wheelbase;
-
-    //Radar configuration parameters
-    int maxDistance=0;
-    int freqSlot=0;
-    int cycleTime=0;
-    int cycleOffset;
-    int countryCode=1;
-    int powersaveStandstill=0;
-    
-    //Network Configuration
-    std::uint32_t ip;
-    std::uint32_t ip1;
     
     TCLAP::CmdLine cmd("Command description message",' ',"0.9");
     
-    fd=socket(AF_INET,SOCK_DGRAM,0);
-    if (fd<0)
+    fdr=socket(AF_INET,SOCK_DGRAM,0);
+    if (fdr<0)
     {
         perror("socket");
         return 1;
     }
-    struct sockaddr_in addr;
+    struct sockaddr_in addrR;//The address to receive from the radar
     u_int yes=1;
     if(
         setsockopt(
-            fd,SOL_SOCKET,SO_REUSEADDR,(char*) &yes,sizeof(yes)
+            fdr,SOL_SOCKET,SO_REUSEADDR,(char*) &yes,sizeof(yes)
         )<0
     )
     {
@@ -135,13 +288,13 @@ int main(int argc,char* argv[]){
     }
     // set up destination address
     //
-    memset(&addr, 0, sizeof(addr));
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = htonl(INADDR_ANY); // differs from sender
-    addr.sin_port = htons(ars548_driver::ars548_Port);
+    memset(&addrR, 0, sizeof(addrR));
+    addrR.sin_family = AF_INET;
+    addrR.sin_addr.s_addr = htonl(INADDR_ANY); // differs from sender
+    addrR.sin_port = htons(ars548_driver::ars548_Port);
     // bind to receive address
     //
-    if (bind(fd, (struct sockaddr*) &addr, sizeof(addr)) < 0) {
+    if (bind(fdr, (struct sockaddr*) &addrR, sizeof(addrR)) < 0) {
         perror("bind");
         return 1;
     }
@@ -154,39 +307,39 @@ int main(int argc,char* argv[]){
     
     if (
         setsockopt(
-            fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*) &mreq, sizeof(mreq)
+            fdr, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*) &mreq, sizeof(mreq)
         ) < 0
     ){
         perror("setsockopt");
         return 1;
     }
-    unsigned int addrlen = sizeof(addr);
+    unsigned int addrlenR = sizeof(addrR);
     nbytes = recvfrom(
-        fd,
+        fdr,
         msgbuf,
         MSGBUFSIZE,
         0,
-        (struct sockaddr *) &addr,
-        &addrlen
+        (struct sockaddr *) &addrR,
+        &addrlenR
         );
     if(nbytes<0)
     {
         perror("Failed attempt of getting data");
         return 1;
     }
-    struct UDPStatus status;
-    status = *((struct UDPStatus *)msgbuf);
+    struct UDPStatus s;
+    s = *((struct UDPStatus *)msgbuf);
     int iterator=0;
-    while (ars548_driver::receiveStatusMsg(nbytes,msgbuf,status)==false)
+    while (!ars548_driver::receiveStatusMsg(nbytes,msgbuf,s))
     {
         
         nbytes = recvfrom(
-        fd,
+        fdr,
         msgbuf,
         MSGBUFSIZE,
         0,
-        (struct sockaddr *) &addr,
-        &addrlen
+        (struct sockaddr *) &addrR,
+        &addrlenR
         );
         if(nbytes<0)
         {
@@ -198,30 +351,31 @@ int main(int argc,char* argv[]){
             perror("Could not receive the status data");
             return 1;
         }
-        
+        s = *((struct UDPStatus*)msgbuf);
+        iterator++;
     }
-    std::cout<<"MaxDistance: "<<status.MaximunDistance<<std::endl;
-    std::cout<<"Radar IP 1: "<<status.SensorIPAddress_1<<std::endl;
-    std::cout<<"Radar IP 0: "<<status.SensorIPAddress_0<<std::endl;
+    std::cout<<"MaxDistance: "<<s.MaximunDistance<<std::endl;
+    std::cout<<"Radar IP 1: "<<s.SensorIPAddress_1<<std::endl;
+    std::cout<<"Radar IP 0: "<<s.SensorIPAddress_0<<std::endl;
         //To configure the radar possition and orientation in the vehicle
-    TCLAP::ValueArg<_Float32>new_x_pos("X","NewXPos","New Longitudinal possition of the radar",false,status.Longitudinal,"float");//TODO
-    TCLAP::ValueArg<_Float32>new_y_pos("Y","NewYPos","New Lateral possition of the radar",false,status.Lateral,"float");//TODO
-    TCLAP::ValueArg<_Float32>new_z_pos("Z","NewZPos","New Vertical possition of the radar",false,status.Vertical,"float");//TODO
-    TCLAP::ValueArg<_Float32>new_yaw("y","NewYaw","New yaw for the radar",false,status.Yaw,"float");//TODO
-    TCLAP::ValueArg<_Float32>new_pitch("P","NewPitch","New pitch for the radar",false,status.Pitch,"float");//TODO
-    TCLAP::ValueArg<std::uint8_t>new_plug_otientation("p","NewPlugOr","New plug orientation for the radar(0=RIGHT,1=LEFT)",false,status.PlugOrientation,"uint8_t");//TODO
+    TCLAP::ValueArg<_Float32>new_x_pos("X","NewXPos","New Longitudinal possition of the radar",false,s.Longitudinal,"float");
+    TCLAP::ValueArg<_Float32>new_y_pos("Y","NewYPos","New Lateral possition of the radar",false,s.Lateral,"float");
+    TCLAP::ValueArg<_Float32>new_z_pos("Z","NewZPos","New Vertical possition of the radar",false,s.Vertical,"float");
+    TCLAP::ValueArg<_Float32>new_yaw("y","NewYaw","New yaw for the radar",false,s.Yaw,"float");
+    TCLAP::ValueArg<_Float32>new_pitch("P","NewPitch","New pitch for the radar",false,s.Pitch,"float");
+    TCLAP::ValueArg<std::uint8_t>new_plug_otientation("p","NewPlugOr","New plug orientation for the radar(0=RIGHT,1=LEFT)",false,s.PlugOrientation,"uint8_t");
     //To configure the characteristics of the vehicle the radar is possitioned
-    TCLAP::ValueArg<_Float32>new_vehicle_Length("L","NewLength","New vehicle length",false,status.Length,"float");//TODO
-    TCLAP::ValueArg<_Float32>new_vehicle_Width("W","NewWidth","New vehicle width",false,status.Width,"float");//TODO
-    TCLAP::ValueArg<_Float32>new_vehicle_Height("H","NewHeight","New vehicle heigth",false,status.Height,"float");//TODO
-    TCLAP::ValueArg<_Float32>new_vehicle_Wheelbase("w","NewWheelLength","New vehicle wheelbase",false,status.Wheelbase,"float");//TODO
+    TCLAP::ValueArg<_Float32>new_vehicle_Length("L","NewLength","New vehicle length",false,s.Length,"float");
+    TCLAP::ValueArg<_Float32>new_vehicle_Width("W","NewWidth","New vehicle width",false,s.Width,"float");
+    TCLAP::ValueArg<_Float32>new_vehicle_Height("H","NewHeight","New vehicle heigth",false,s.Height,"float");
+    TCLAP::ValueArg<_Float32>new_vehicle_Wheelbase("w","NewWheelLength","New vehicle wheelbase",false,s.Wheelbase,"float");
     //To configure the radar parameters
-    TCLAP::ValueArg<std::uint16_t>max_dist("D","maxDist","New max distance for the radar",false,status.MaximunDistance,"uint16_t");
-    TCLAP::ValueArg<std::uint8_t>new_frequency_slot("F","NewFreq","New Frequency Slot for the radar (0=Low,1=Mid,2=High)",false,status.FrequencySlot,"uint8_t");
-    TCLAP::ValueArg<std::uint8_t>new_cycle_time("C","Newtime","New cycle time for the radar",false,status.CycleTime,"uint8_t");
-    TCLAP::ValueArg<std::uint8_t>new_cycle_offset("O","NewOffset","New radar cycle offset",false,status.TimeSlot,"uint8_t");
-    TCLAP::ValueArg<std::uint8_t>new_country_code("c","NewCountryCode","New radar Country Code (1=Worldwide,2=Japan)",false,status.HCC,"uint8_t");
-    TCLAP::ValueArg<std::uint8_t>powersave_standstill("p","PowersaveActive","Turn on or off the powersaving in standstill(0=Off,1=On)",false,status.Powersave_Standstill,"uint8_t");
+    TCLAP::ValueArg<std::uint16_t>max_dist("D","maxDist","New max distance for the radar",false,s.MaximunDistance,"uint16_t");
+    TCLAP::ValueArg<std::uint8_t>new_frequency_slot("F","NewFreq","New Frequency Slot for the radar (0=Low,1=Mid,2=High)",false,s.FrequencySlot,"uint8_t");
+    TCLAP::ValueArg<std::uint8_t>new_cycle_time("C","Newtime","New cycle time for the radar",false,s.CycleTime,"uint8_t");
+    TCLAP::ValueArg<std::uint8_t>new_cycle_offset("O","NewOffset","New radar cycle offset",false,s.TimeSlot,"uint8_t");
+    TCLAP::ValueArg<std::uint8_t>new_country_code("c","NewCountryCode","New radar Country Code (1=Worldwide,2=Japan)",false,s.HCC,"uint8_t");
+    TCLAP::ValueArg<std::uint8_t>powersave_standstill("s","PowersaveActiveStandstill","Turn on or off the powersaving in standstill(0=Off,1=On)",false,s.Powersave_Standstill,"uint8_t");
     //To configure the radar network
     TCLAP::ValueArg<std::string>new_ip0_arg("I","NewIp0","New IP0 to connect to the radar",false,NEW_IP,"string");
     //TCLAP::ValueArg<std::string>new_ip1_arg("i","NewIp1","New IP1 to connect to the radar",false,NEW_IP,"string");
@@ -270,76 +424,124 @@ int main(int argc,char* argv[]){
 
     //radar characteristics.
     c.MaximumDistance=max_dist.getValue();
+    std::cout<<c.MaximumDistance<<std::endl;
     c.FrequencySlot=new_frequency_slot.getValue();
     c.CycleTime=new_cycle_time.getValue();
-    c.FrequencySlot=new_cycle_offset.getValue();
+    c.TimeSlot=new_cycle_offset.getValue();
     c.HCC=new_country_code.getValue();
     c.Powersave_Standstill=powersave_standstill.getValue();
     
     //Network characteristics.
     c.SensorIPAddress_0=inet_addr(new_ip0_arg.getValue().c_str());
-    c.SensorIPAddress_1=status.SensorIPAddress_1;
-    /**
-     *  TODO.
-     *  Make the program able to modify every element.
-     */
-    //Check if the user wants to change the radar possition and orientation
-    if (c.Longitudinal!=status.Longitudinal)
-        c.NewSensorMounting=1;
-    if (c.Lateral!=status.Lateral)
-        c.NewSensorMounting=1;
-    if (c.Vertical!=status.Vertical)
-        c.NewSensorMounting=1;
-    if (c.Yaw!=status.Yaw)
-        c.NewSensorMounting=1;
-    if (c.Pitch!=status.Pitch)
-        c.NewSensorMounting=1;
-    if (c.PlugOrientation!=status.PlugOrientation)
-        c.NewSensorMounting=1;
-    
-    //Check if the user wants to change the vehicle characteristics
-    if (c.Length!=status.Length)
-        c.NewVehicleParameters=1;
-    if (c.Width!=status.Width)
-        c.NewVehicleParameters=1;
-    if (c.Height!=status.Height)
-        c.NewVehicleParameters=1;
-    if (c.Wheelbase!=status.Wheelbase)
-        c.NewVehicleParameters=1;
-    
-    //Check if the user wants to change the radar configuration
-    if(c.FrequencySlot!=status.FrequencySlot)
-        c.NewRadarParameters=1;
-    if (c.MaximumDistance!=status.MaximunDistance)
-    {
-        c.NewRadarParameters=1;
-        if (c.MaximumDistance<190 && c.FrequencySlot!=1)
-            c.FrequencySlot=1;
+    c.SensorIPAddress_1=s.SensorIPAddress_1;
+
+    //Modify characteristics
+    c.NewSensorMounting=0;
+    c.NewVehicleParameters=0;
+    c.NewRadarParameters=0;
+    c.NewNetworkConfiguration=0;
+
+    c=changeConfiguration(c,s);
+    //Check if the user wants to modify any of the radar parameters
+    if(c.NewSensorMounting==1||c.NewVehicleParameters==1||c.NewRadarParameters==1||c.NewNetworkConfiguration==1)
+    {   
+        if (c.NewSensorMounting==1)
+        {
+            std::cout<<"Changing the sensor mounting Possition"<<std::endl;
+        }
+        if (c.NewVehicleParameters==1)
+        {
+            std::cout<<"Changing the vehicle parameters"<<std::endl;
+        }
+        if (c.NewRadarParameters==1)
+        {
+            std::cout<<"Changing the Radar parameters"<<std::endl;
+        }
+        if (c.NewNetworkConfiguration==1)
+        {
+            std::cout<<"Changing the Network Configuration"<<std::endl;
+        }
+        //change endianness
+        c.ServiceID=0;
+        c.MethodID=390;
+        c.PayloadLength=56;
+        c=modifyConfiguration(c);
+        //send the message to the radar
+        fds = socket(AF_INET, SOCK_DGRAM, 0);
+        if (fds < 0) {
+            perror("socket");
+            return 1;
+        }
+        struct sockaddr_in addrS;
+        std::memset(&addrS, 0, sizeof(addrS));
+        addrS.sin_family = AF_INET;
+        addrS.sin_port = htons(CONFIGURATION_DESTINATION_PORT);
+        int addrlenS=sizeof(addrS);
+        inet_pton(AF_INET, RADAR_IP, &addrS.sin_addr);
+        int sent_bytes=sendto(fds,&c,sizeof(c),0, (struct sockaddr *) &addrS,addrlenS);
+        if (sent_bytes < 0) {
+                perror("Failed sending the message");
+                return 1;
+        }
+        int changed=0;
+
+        while (!isConfigEqualsToStatus(modifyConfiguration(c),s))
+        {    
+            int sent_bytes=sendto(fds,&c,sizeof(c),0, (struct sockaddr *) &addrS,addrlenS);
+            if (sent_bytes < 0) {
+                perror("Failed sending the message");
+                return 1;
+            }
+            while (!ars548_driver::receiveStatusMsg(nbytes,msgbuf,s)){
+                nbytes = recvfrom(
+                fdr,
+                msgbuf,
+                MSGBUFSIZE,
+                0,
+                (struct sockaddr *) &addrR,
+                &addrlenR
+                );
+                if(nbytes<0)
+                {
+                    perror("Failed attempt of getting data");
+                    return 1;
+                }
+                if (iterator>=6)
+                {
+                    perror("Could not receive the status data");
+                    return 1;
+                }
+            }
+            std::cout<<changed<<" Try"<<std::endl;
+            changed++;
+            printStatus(s);
+            printConfig(modifyConfiguration(c));
+            sleep(1);
+
+        }
+        
     }
-    if(c.CycleTime!=status.CycleTime)
-        c.NewRadarParameters=1;
-    if (c.TimeSlot!=status.TimeSlot)
-        c.NewRadarParameters=1;
-    if (c.HCC!=status.HCC)
-        c.NewRadarParameters=1;
-    if(c.Powersave_Standstill!=status.Powersave_Standstill)
-        c.NewRadarParameters=1;
-
-    // Check if the user wants to change the radar IP.
-    if(c.SensorIPAddress_0!=status.SensorIPAddress_0&&ip!=inet_addr(NEW_IP))
-        c.NewNetworkConfiguration=1;
-    
-    //change endianness
-    
-    //fill the configuration structure to send the message to the radar.
-    
-    
-    /**
-     * TODO 
-     * Connect to the radar to obtain all of the default values of the radar.
-    */
-
-
- 
+    //Obtain all of the parameters of the radar again to check the configuration changes.
+    while (!ars548_driver::receiveStatusMsg(nbytes,msgbuf,s)){
+        nbytes = recvfrom(
+        fdr,
+        msgbuf,
+        MSGBUFSIZE,
+        0,
+        (struct sockaddr *) &addrR,
+        &addrlenR
+        );
+        if(nbytes<0)
+        {
+            perror("Failed attempt of getting data");
+            return 1;
+        }
+        if (iterator>=6)
+        {
+            perror("Could not receive the status data");
+            return 1;
+        }
+    }
+    printStatus(s);
     return 0;
 }

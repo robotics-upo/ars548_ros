@@ -663,7 +663,7 @@ class ars548_driver : public rclcpp::Node{
     /**
      * 
      */
-    static bool receiveStatusMsg(int nbytes,const char * buffer,struct UDPStatus& status){
+    static bool receiveStatusMsg(int nbytes,const char * buffer, UDPStatus &status){
         if(nbytes==STATUS_MESSAGE_PAYLOAD)
         {
             status = *((struct UDPStatus *)buffer);
