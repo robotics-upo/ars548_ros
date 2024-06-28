@@ -24,6 +24,7 @@ ament_target_dependencies(ars548_driver_filter rclcpp sensor_msgs ars548_message
 add_executable(radar_setup src/radar_setup.cpp)
 ament_target_dependencies(radar_setup tf2_geometry_msgs sensor_msgs ars548_messages)
 
+
 install(TARGETS
   ars548_driver
   radar_setup
@@ -37,6 +38,10 @@ install(DIRECTORY
 )
 install(DIRECTORY
   rviz
+  DESTINATION share/${PROJECT_NAME}/
+  )
+install(DIRECTORY
+  scripts
   DESTINATION share/${PROJECT_NAME}/
   )
 if(BUILD_TESTING)

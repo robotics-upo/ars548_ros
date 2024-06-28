@@ -1,5 +1,5 @@
 /**
- * @file ars548_change_ip.cpp
+ * @file radar_setup.cpp
  * @brief In this file we try to change the radar Parameters using the according message. (Be carefull when changing the IP)
  * 
 */
@@ -62,7 +62,7 @@ static bool isConfigEqualsToStatus(SensorConfiguration c,UDPStatus s){
         isEqual=false;
     if(c.Powersave_Standstill!=s.Powersave_Standstill)
         isEqual=false;
-    if(c.SensorIPAddress_0!=s.SensorIPAddress_0 && c.SensorIPAddress_0!=inet_addr(NEW_IP))
+    if(c.SensorIPAddress_0!=s.SensorIPAddress_0 && c.SensorIPAddress_0!=inet_addr(NEW_IP)&& c.SensorIPAddress_0!=0)
         isEqual=false;
     return isEqual;
 }
@@ -82,7 +82,7 @@ static void printConfig(SensorConfiguration c)
     {
         std::cout<<"Plug Orientation: RIGHT"<<std::endl;
     }
-    std::cout<<"Vehivle Length: "<<c.Length<<std::endl;
+    std::cout<<"Vehicle Length: "<<c.Length<<std::endl;
     std::cout<<"Vehicle Width: "<<c.Width<<std::endl;
     std::cout<<"Vehicle Height: "<<c.Height<<std::endl;
     std::cout<<"Vehicle WheelBase: "<<c.Wheelbase<<std::endl;
@@ -354,10 +354,7 @@ int main(int argc,char* argv[]){
         s = *((struct UDPStatus*)msgbuf);
         iterator++;
     }
-    std::cout<<"MaxDistance: "<<s.MaximunDistance<<std::endl;
-    std::cout<<"Radar IP 1: "<<s.SensorIPAddress_1<<std::endl;
-    std::cout<<"Radar IP 0: "<<s.SensorIPAddress_0<<std::endl;
-        //To configure the radar possition and orientation in the vehicle
+    //To configure the radar possition and orientation in the vehicle
     TCLAP::ValueArg<_Float32>new_x_pos("X","NewXPos","New Longitudinal possition of the radar",false,s.Longitudinal,"float");
     TCLAP::ValueArg<_Float32>new_y_pos("Y","NewYPos","New Lateral possition of the radar",false,s.Lateral,"float");
     TCLAP::ValueArg<_Float32>new_z_pos("Z","NewZPos","New Vertical possition of the radar",false,s.Vertical,"float");
@@ -432,7 +429,7 @@ int main(int argc,char* argv[]){
     c.Powersave_Standstill=powersave_standstill.getValue();
     
     //Network characteristics.
-    c.SensorIPAddress_0=inet_addr(new_ip0_arg.getValue().c_str());
+    c.SensorIPAddress_0=s.SensorIPAddress_0;
     c.SensorIPAddress_1=s.SensorIPAddress_1;
 
     //Modify characteristics
@@ -465,7 +462,8 @@ int main(int argc,char* argv[]){
         c.ServiceID=0;
         c.MethodID=390;
         c.PayloadLength=56;
-        c=modifyConfiguration(c);
+        SensorConfiguration sc;
+        sc=modifyConfiguration(c);
         //send the message to the radar
         fds = socket(AF_INET, SOCK_DGRAM, 0);
         if (fds < 0) {
@@ -478,50 +476,13 @@ int main(int argc,char* argv[]){
         addrS.sin_port = htons(CONFIGURATION_DESTINATION_PORT);
         int addrlenS=sizeof(addrS);
         inet_pton(AF_INET, RADAR_IP, &addrS.sin_addr);
-        int sent_bytes=sendto(fds,&c,sizeof(c),0, (struct sockaddr *) &addrS,addrlenS);
+        int sent_bytes=sendto(fds,&sc,sizeof(sc),0, (struct sockaddr *) &addrS,addrlenS);
         if (sent_bytes < 0) {
                 perror("Failed sending the message");
                 return 1;
         }
-        int changed=0;
-
-        while (!isConfigEqualsToStatus(modifyConfiguration(c),s))
-        {    
-            int sent_bytes=sendto(fds,&c,sizeof(c),0, (struct sockaddr *) &addrS,addrlenS);
-            if (sent_bytes < 0) {
-                perror("Failed sending the message");
-                return 1;
-            }
-            while (!ars548_driver::receiveStatusMsg(nbytes,msgbuf,s)){
-                nbytes = recvfrom(
-                fdr,
-                msgbuf,
-                MSGBUFSIZE,
-                0,
-                (struct sockaddr *) &addrR,
-                &addrlenR
-                );
-                if(nbytes<0)
-                {
-                    perror("Failed attempt of getting data");
-                    return 1;
-                }
-                if (iterator>=6)
-                {
-                    perror("Could not receive the status data");
-                    return 1;
-                }
-            }
-            std::cout<<changed<<" Try"<<std::endl;
-            changed++;
-            printStatus(s);
-            printConfig(modifyConfiguration(c));
-            sleep(1);
-
-        }
-        
+        close(fds);
     }
-    //Obtain all of the parameters of the radar again to check the configuration changes.
     while (!ars548_driver::receiveStatusMsg(nbytes,msgbuf,s)){
         nbytes = recvfrom(
         fdr,
@@ -543,5 +504,12 @@ int main(int argc,char* argv[]){
         }
     }
     printStatus(s);
-    return 0;
+    printConfig(c);
+    if(isConfigEqualsToStatus(c,s))
+    {
+        return 0;
+    }else
+    {
+        return 1;
+    } 
 }
