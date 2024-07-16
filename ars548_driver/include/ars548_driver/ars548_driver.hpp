@@ -476,15 +476,15 @@ class ars548_driver : public rclcpp::Node{
      * @return The status of the connection. If it returns 1, there is an error in the execution.
      */
     int readData(rclcpp::Clock clock){
-        auto node=rclcpp::Node::make_shared("publisherObj");
+       
         //These are the publishers that send the data in a custom message
-        auto statusPublisher=node->create_publisher<ars548_messages::msg::Status>("Status",10);
-        auto objectPublisher=node->create_publisher<ars548_messages::msg::ObjectList>("ObjectList",10);
-        auto detectionsPublisher=node->create_publisher<ars548_messages::msg::DetectionList>("DetectionList",10);
+        auto statusPublisher=create_publisher<ars548_messages::msg::Status>("Status",10);
+        auto objectPublisher=create_publisher<ars548_messages::msg::ObjectList>("ObjectList",10);
+        auto detectionsPublisher=create_publisher<ars548_messages::msg::DetectionList>("DetectionList",10);
         //These are the publishers that send the data to Rviz2
-        auto directionPublisher=node->create_publisher<geometry_msgs::msg::PoseArray>("DirectionVelocity",10);
-        auto pubObj= node->create_publisher<sensor_msgs::msg::PointCloud2>("PointCloudObject",10);
-        auto pubDetect=node->create_publisher<sensor_msgs::msg::PointCloud2>("PointCloudDetection",10);
+        auto directionPublisher=create_publisher<geometry_msgs::msg::PoseArray>("DirectionVelocity",10);
+        auto pubObj= create_publisher<sensor_msgs::msg::PointCloud2>("PointCloudObject",10);
+        auto pubDetect=create_publisher<sensor_msgs::msg::PointCloud2>("PointCloudDetection",10);
         //Create messages for the publishers
         auto statusMessage=ars548_messages::msg::Status();
         auto detectionMessage=ars548_messages::msg::DetectionList();
