@@ -1,4 +1,5 @@
 <launch>
+    <arg name="viz"  default="true"/>
     <arg name="frameID_Radar" default="ARS_548"/>
     <arg name="radarIP" default="224.0.2.2"/>
     <arg name="radarPort" default="42102"/>
@@ -8,6 +9,6 @@
         <param name="frameID" value="$(var frameID_Radar)"/>
     </node>
     
-    <node pkg="rviz2" exec="rviz2" name="Visualization" args="-d $(find-pkg-share ars548_driver)/rviz/RadarVisualization.rviz"/>
-    <node pkg="tf2_ros" exec="static_transform_publisher" args="0 0 0 0 0 0 PointCloud ARS_548"/>
+    <node if="$(var viz)" pkg="rviz2" exec="rviz2" name="Visualization" 
+    args="-d $(find-pkg-share ars548_driver)/rviz/RadarVisualization.rviz"/>
 </launch>
