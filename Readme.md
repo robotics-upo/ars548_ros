@@ -29,6 +29,8 @@ This project consists of two ROS2 packages: ars548_driver and ars548_messages. B
     * ### ars548_driver_node.cpp
         This file launches the driver class to execute the project so we can see how it works. 
 
+    * ### radar_setup.cpp
+        This file allows the user to modify its default parameters so it can be adapted to their project.
 
     * ### ars548_data.h
         In this file we save the different structures we will use to store and send the translated data for later use.
@@ -40,9 +42,12 @@ This project consists of two ROS2 packages: ars548_driver and ars548_messages. B
         This two files configure an define all dependencies it needs to execute the project, including libraries, packages, etc. 
         
         They also define the files and executables this project creates when compiled.
+    
+    * ### configurer.sh
+        This file creates a VLan connection to the default radar direction when executed. 
 
-    * ### Configurer.sh
-        This file creates a connection to the default radar direction when executed. 
+    * ### setup_max_dist.sh
+        This file allows the user to change the default radar maximum detection distance when executed. (It is better to execute this file when the radar is starting)
 
     * ### ars548_launch.xml
         This is the file we will be executing using the following command:
@@ -149,7 +154,7 @@ In this file, we are working with the **ROS 2 Humble** distribution on Ubuntu 22
         To execute this file you must go to the folder containing it and execute the following command:
 
         ```
-        ./Configurer.sh
+        ./configurer.sh
         ```  
         Once you execute the command, the program will ask you if you want to create the vlan connection and after that it will ask you to introduce the parent interface you want to use to create the connection.(It must be your physical interface, otherwise it won't work).\
         After all that it will create the connection with the radar using the default values for the network.
@@ -170,3 +175,21 @@ For executing the driver you should go to the directory in wich you have downloa
 The first command is used to build the project.\
 The second command is used to source the project.\
 The last command is used to launch the project and see the results in Rviz 2.
+
+To configure the parameters of the radar
+---
+If you want to see the initial parameters of the radar you can execute the next command:
+```
+    > ros2 run ars548_driver radar_setup.cpp
+``` 
+which lets you see the default parameters of the radar.
+In case you want to change any of those parameters, you can execute the same command adding the arguments that are shown inside the file. For example:
+```
+    >ros2 run ars548_driver radar_setup.cpp -D 99
+```
+Changes the maximum detection distance of the radar to the value 99.
+
+To change this same parameter, the user can also execute the **setup_max_dist.sh** file. (For it to work properly, the user may need to restart the radar)
+```
+    >./setup_max_dist.sh
+```

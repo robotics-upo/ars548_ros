@@ -13,7 +13,6 @@ find_package(ars548_messages REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
-
 include_directories(include)
 
 add_executable(ars548_driver src/ars548_driver_node.cpp)
@@ -22,8 +21,13 @@ ament_target_dependencies(ars548_driver rclcpp ars548_messages sensor_msgs tf2_g
 add_executable(ars548_filter_node src/ars548_filter_node.cpp)
 ament_target_dependencies(ars548_filter_node rclcpp sensor_msgs ars548_messages tf2_geometry_msgs) 
 
+add_executable(radar_setup src/radar_setup.cpp)
+ament_target_dependencies(radar_setup tf2_geometry_msgs sensor_msgs ars548_messages)
+
+
 install(TARGETS
   ars548_driver
+  radar_setup
   ars548_filter_node
   DESTINATION lib/${PROJECT_NAME}
 )
@@ -34,6 +38,10 @@ install(DIRECTORY
 )
 install(DIRECTORY
   rviz
+  DESTINATION share/${PROJECT_NAME}/
+  )
+install(DIRECTORY
+  scripts
   DESTINATION share/${PROJECT_NAME}/
   )
 if(BUILD_TESTING)

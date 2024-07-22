@@ -4,6 +4,7 @@
  * It is also used to fill the messages sent to the user.
  * @brief Data obtained from the RadarSensors_Annex_AES548_IO SW 05.48.04.pdf
  */
+#pragma once
 #include <cstdint>
 #pragma pack(1)
 struct UDPStatus {
