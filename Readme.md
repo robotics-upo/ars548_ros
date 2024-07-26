@@ -29,6 +29,16 @@ This project consists of two ROS2 packages: ars548_driver and ars548_messages. B
     * ### ars548_driver_node.cpp
         This file launches the driver class to execute the project so we can see how it works. 
 
+    * ### ars548_filter_interface.hpp
+        This file contains the class that will filter the lists of objects following the condition given by the user and then
+        fills and sends a new Pointcloud with the data.
+
+    * ### ars548_filter_example.hpp
+        This file contains the class that will be used to test the filtering interface.
+    
+    * ### ars548_filter_node.cpp
+        This file launches the filter example class to execute it and see how it works.  
+
     * ### radar_setup.cpp
         This file allows the user to modify its default parameters so it can be adapted to their project.
 
@@ -66,7 +76,22 @@ This project consists of two ROS2 packages: ars548_driver and ars548_messages. B
         This node uses the **RadarVisualization.rviz** file to configure the window.
 
         * The third and last node creates an static-transform-publisher to transform the data obtained from the radar to the data shown in RViz 2 (You can also change the arguments so it adapts to your project).
-        
+    * ### filter_launch.xml
+        This is the file we will be executing using the following command:
+        ```
+        ros2 launch ars548_driver filter_launch.xml
+        ```
+        Inside this file we create four nodes that will be executed.
+        * The first node is the one that executes the driver created in this project. (The parameters are the same as the ones used in the ars548_launch.xml file)
+        * The second node is the one that executes the filter created in this project.\
+        This node has two parameters that we can change.\
+        This parameters are:
+            * The minimum velocity we want to use to filter the data.
+            * The Frame ID that we will use to send the filter messages.
+        * The third node opens an RViz 2 window to visualize the data received from the radar.\
+        This node uses the **filter.rviz** file to configure the window.
+        * The third and last node creates an static-transform-publisher to transform the data obtained from the radar to the data shown in RViz 2 (You can also change the arguments so it adapts to your project).
+
 * ### ars548_messages
     This package contains all of the structures for the custom messages sent to the user.
     * ### Object.msg

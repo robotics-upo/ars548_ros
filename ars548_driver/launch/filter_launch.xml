@@ -12,7 +12,7 @@
     </node>
 
     <node pkg="ars548_driver" exec="ars548_filter_node" name="filtered">
-        #<param name="minimum" value="$(var minimum_velocity)"/>
+        <param name="minimum" value="$(var minimum_velocity)"/>
         <param name="frameID" value="$(var frameID_Filter)"/>
     </node>
     <node pkg="rviz2" exec="rviz2" name="Visualization" args="-d $(find-pkg-share ars548_driver)/rviz/filter.rviz"/>

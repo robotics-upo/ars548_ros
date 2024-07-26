@@ -1,3 +1,0 @@
-<launch>
-    <executable cmd="ros2 bag record  /PointCloudObject /PointCloudDetection /DirectionVelocity /ObjectList /DetectionList /Status /tf /tf_static /ouster/points"/>
-</launch>
