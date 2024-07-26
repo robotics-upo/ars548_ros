@@ -1,18 +1,18 @@
 <launch>
-    <arg name="minimum_velocity" default="0"/>
+    <arg name="minimum_velocity" default="2.0"/>
     <arg name="frameID_Radar" default="ARS_548"/>
     <arg name="frameID_Filter" default="ARS_548"/>
     <arg name="radarIP" default="224.0.2.2"/>
     <arg name="radarPort" default="42102"/>
 
-    <node pkg="ars548_driver" exec="ars548_driver" name="radar">
+    <node pkg="ars548_driver" exec="ars548_driver" name="radar" output="screen">
         <param name="radarIP" value="$(var radarIP)"/>
         <param name="radarPort" value="$(var radarPort)"/>
         <param name="frameID" value="$(var frameID_Radar)"/>
     </node>
 
-    <node pkg="ars548_driver" exec="ars548_driver_filter" name="filtered">
-        <param name="minimum" value="$(var minimum_velocity)"/>
+    <node pkg="ars548_driver" exec="ars548_filter_node" name="filtered">
+        #<param name="minimum" value="$(var minimum_velocity)"/>
         <param name="frameID" value="$(var frameID_Filter)"/>
     </node>
     <node pkg="rviz2" exec="rviz2" name="Visualization" args="-d $(find-pkg-share ars548_driver)/rviz/filter.rviz"/>

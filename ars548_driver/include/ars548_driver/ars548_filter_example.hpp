@@ -18,7 +18,10 @@ public:
     float vx = o.f_dynamics_absvel_x;
     float vy = o.f_dynamics_absvel_y;
 
-    return (vx*vx + vy*vy) < min_velocity_sq;
+    RCLCPP_INFO(this->get_logger(),"ARS548FilterExample condition: v_sq = %f, min_vel_sq = %f",
+                vx*vx + vy*vy, min_velocity_sq);
+
+    return (vx*vx + vy*vy) > min_velocity_sq;
   }
 
 };

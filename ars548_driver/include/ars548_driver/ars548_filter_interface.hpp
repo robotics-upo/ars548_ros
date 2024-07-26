@@ -37,6 +37,9 @@ protected:
 
   void topicCallback(const ars548_messages::msg::ObjectList::SharedPtr msg)
   {
+
+    // RCLCPP_INFO(this->get_logger(),"ARS548FilterInterface Received ObjectList. Size: %d",
+    //             (int)msg->objectlist_numofobjects);
     modifierObject.resize(msg->objectlist_numofobjects);
     fillCloudMessage(filtered_cloud_msgObj);
     sensor_msgs::PointCloud2Iterator<float> iter_x(filtered_cloud_msgObj,"x");
@@ -44,7 +47,7 @@ protected:
     sensor_msgs::PointCloud2Iterator<float> iter_z(filtered_cloud_msgObj,"z");
     sensor_msgs::PointCloud2Iterator<float> iter_vx(filtered_cloud_msgObj,"vx");
     sensor_msgs::PointCloud2Iterator<float> iter_vy(filtered_cloud_msgObj,"vy");
-    int direction_operator=0;
+    int final_size=0;
     for(int i=0;i<msg->objectlist_numofobjects;i++)
       {
 
@@ -60,9 +63,13 @@ protected:
             ++iter_x;
             ++iter_y;
             ++iter_z;
+            final_size++;
           }    
       }
-    modifierObject.resize(direction_operator);
+
+    // RCLCPP_INFO(this->get_logger(),"ARS548FilterInterface Final . Filtered size: %d",
+    //              final_size);
+    modifierObject.resize(final_size);
     pubObjFilter->publish(filtered_cloud_msgObj);
   }
 
@@ -81,7 +88,7 @@ public:
                                         "vy",1,sensor_msgs::msg::PointField::FLOAT32
                                         );
     modifierObject.reserve(SIZE);
-    pubObjFilter=create_publisher<sensor_msgs::msg::PointCloud2>("PointCloudFiltered",10);
+    pubObjFilter=create_publisher<sensor_msgs::msg::PointCloud2>("PointCloudObjectFiltered",10);
     subscription_=create_subscription<ars548_messages::msg::ObjectList>
       ("ObjectList",10,std::bind(&ARS548FilterInterface::topicCallback,this,_1));
   }
