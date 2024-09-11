@@ -218,3 +218,8 @@ To change this same parameter, the user can also execute the **setup_max_dist.sh
 ```
     >./setup_max_dist.sh
 ```
+
+The parameter list can be obtained by executing the next command:
+```
+    >ros2 run ars548_driver radar_setup.cpp -h
+```
