@@ -128,7 +128,12 @@ In this file, we are working with the **ROS 2 Humble** distribution on Ubuntu 22
 * ### Install TF 2:
     To install TF 2 and all of its tools, run the next command on your terminal: 
     ```
-    sudo apt-get install ros-humble-tf2-ros ros-humble
+    sudo apt-get install ros-humble-tf2-ros
+    ```
+* ### Install tclap:
+    To install tclap, run the next command on your terminal:
+    ```
+    sudo apt-get install libtclap-dev
     ```
 * ### Install Colcon:
     This tool is used to build ROS packages.\
@@ -200,6 +205,24 @@ For executing the driver you should go to the directory in wich you have downloa
 The first command is used to build the project.\
 The second command is used to source the project.\
 The last command is used to launch the project and see the results in Rviz 2.
+
+How to execute the driver using docker
+---
+In case you want to execute this driver but you dont have ROS2 humble installed, you can use this method.
+
+First you need to build the Dockerfile that is inside the docker folder. 
+To do this, after downloading the project, you should go to the docker directory and execute the next command:
+
+```
+    > docker build -t ars548_rdi .
+```
+After that, you can run this command to run the docker:
+
+```
+    > docker run --rm -it --network host --ipc=host --pid=host   ars548rdi 
+ 
+```
+To check the results you can use rviz and open the provided configuration file at the rviz folder. 
 
 To configure the parameters of the radar
 ---
