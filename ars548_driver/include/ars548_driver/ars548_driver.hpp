@@ -538,7 +538,7 @@ class ars548_driver : public rclcpp::Node{
         //
         while (1)
         {
-            RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"getting data.");
+            RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"),"getting data.");
             nbytes = recvfrom(
             fd,
             msgbuf,
@@ -579,7 +579,7 @@ class ars548_driver : public rclcpp::Node{
                 {
                     fillStatusMessage(statusMessage,status);
                     statusPublisher->publish(statusMessage);
-                    RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"publishing status data.\n");
+                    RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"),"publishing status data.\n");
                 }
                 break;
             case OBJECT_MESSAGE_PAYLOAD:
@@ -612,7 +612,7 @@ class ars548_driver : public rclcpp::Node{
                         pubObj->publish(cloud_msgObj);
                         directionPublisher->publish(cloud_Direction);
                         objectPublisher->publish(objectMessage);  
-                        RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"published object."); 
+                        RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"),"published object."); 
                 }
                 break;
             case DETECTION_MESSAGE_PAYLOAD:
@@ -638,7 +638,7 @@ class ars548_driver : public rclcpp::Node{
                             posX = detectionList.List_Detections[i].f_Range*float(std::cos(detectionList.List_Detections[i].f_ElevationAngle))*float(std::cos(detectionList.List_Detections[i].f_AzimuthAngle));
                             posY = detectionList.List_Detections[i].f_Range*float(std::cos(detectionList.List_Detections[i].f_ElevationAngle))*float(std::sin(detectionList.List_Detections[i].f_AzimuthAngle));
                             posZ = detectionList.List_Detections[i].f_Range*float(std::sin(detectionList.List_Detections[i].f_ElevationAngle));
-                            RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"Detection possition \n x: %f\n y: %f\n z:%f.",posX,posY,posZ);
+                            RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"),"Detection possition \n x: %f\n y: %f\n z:%f.",posX,posY,posZ);
                             *iter_xD = posX;
                             *iter_yD = posY;
                             *iter_zD = posZ;
@@ -651,7 +651,7 @@ class ars548_driver : public rclcpp::Node{
                         }
                         pubDetect->publish(cloud_msgDetect);
                         detectionsPublisher->publish(detectionMessage);
-                        RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"published Detection.");
+                        RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"),"published Detection.");
    
                 }             
                 break;
