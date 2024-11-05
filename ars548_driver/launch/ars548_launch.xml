@@ -3,7 +3,7 @@
     <arg name="frameID_Radar" default="ARS_548"/>
     <arg name="radarIP" default="224.0.2.2"/>
     <arg name="radarPort" default="42102"/>
-    <node pkg="ars548_driver" exec="ars548_driver" name="radar">
+    <node pkg="ars548_driver" exec="ars548_driver" name="radar" output="screen">
         <param name="radarIP" value="$(var radarIP)"/>
         <param name="radarPort" value="$(var radarPort)"/>
         <param name="frameID" value="$(var frameID_Radar)"/>
