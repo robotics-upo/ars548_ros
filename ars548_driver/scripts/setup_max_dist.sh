@@ -7,7 +7,7 @@ modifyMaxdist(){
     then
         sendMessage
     else
-        if ["$a" != "n" ] && [ "$a" != "n" ] 
+        if ["$a" != "n" ] && [ "$a" != "N" ] 
             then
             echo "Unknown answer. Try with y or n"
             exit
