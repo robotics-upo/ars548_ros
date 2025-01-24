@@ -69,107 +69,108 @@ static bool isConfigEqualsToStatus(SensorConfiguration c,UDPStatus s){
 
 static void printConfig(SensorConfiguration c)
 {
-    std::cout<<"Config: "<<std::endl;
-    std::cout<<"Longitudinal Pos: "<<c.Longitudinal<<std::endl;
-    std::cout<<"Lateral Pos: "<<c.Lateral<<std::endl;
-    std::cout<<"Vertical Pos: "<<c.Vertical<<std::endl;
-    std::cout<<"Yaw: "<<c.Yaw<<std::endl;
-    std::cout<<"Pitch: "<<c.Pitch<<std::endl;
+    std::cout<<"Config: \n";
+    std::cout<<"Longitudinal Pos: "<<c.Longitudinal<<"\n";
+    std::cout<<"Lateral Pos: "<<c.Lateral<<"\n";
+    std::cout<<"Vertical Pos: "<<c.Vertical<<"\n";
+    std::cout<<"Yaw: "<<c.Yaw<<"\n";
+    std::cout<<"Pitch: "<<c.Pitch<<"\n";
     if(c.PlugOrientation==1)
     {
-        std::cout<<"Plug Orientation: LEFT"<<std::endl;
+        std::cout<<"Plug Orientation: LEFT\n";
     }else
     {
-        std::cout<<"Plug Orientation: RIGHT"<<std::endl;
+        std::cout<<"Plug Orientation: RIGHT\n";
     }
-    std::cout<<"Vehicle Length: "<<c.Length<<std::endl;
-    std::cout<<"Vehicle Width: "<<c.Width<<std::endl;
-    std::cout<<"Vehicle Height: "<<c.Height<<std::endl;
-    std::cout<<"Vehicle WheelBase: "<<c.Wheelbase<<std::endl;
-    std::cout<<"Max Detection Dist: "<<c.MaximumDistance<<std::endl;
+    std::cout<<"Vehicle Length: "<<c.Length<<"\n";
+    std::cout<<"Vehicle Width: "<<c.Width<<"\n";
+    std::cout<<"Vehicle Height: "<<c.Height<<"\n";
+    std::cout<<"Vehicle WheelBase: "<<c.Wheelbase<<"\n";
+    std::cout<<"Max Detection Dist: "<<c.MaximumDistance<<"\n";
     switch (c.FrequencySlot)
     {
     case 0:
-        std::cout<<"Center Frequency: LOW"<<std::endl;
+        std::cout<<"Center Frequency: LOW\n";
         break;
     case 1:
-        std::cout<<"Center Frequency: MID"<<std::endl;
+        std::cout<<"Center Frequency: MID\n";
         break;
     default:
-        std::cout<<"Center Frequency: HIGH"<<std::endl;
+        std::cout<<"Center Frequency: HIGH\n";
         break;
     }
-    std::cout<<"Cycle Time: "<<c.CycleTime<<std::endl;
-    std::cout<<"Cycle Offset: "<<(int)c.TimeSlot<<std::endl;
+    std::cout<<"Cycle Time: "<<c.CycleTime<<"\n";
+    std::cout<<"Cycle Offset: "<<(int)c.TimeSlot<<"\n";
     if(c.HCC==1)
     {
-        std::cout<<"Country Code: WORLDWIDE"<<std::endl;
+        std::cout<<"Country Code: WORLDWIDE\n";
     }else
     {
-        std::cout<<"Country Code: JAPAN"<<std::endl;
+        std::cout<<"Country Code: JAPAN\n";
     }
     if (c.Powersave_Standstill==1)
     {
-        std::cout<<"Powersave Standstill: ON"<<std::endl;
+        std::cout<<"Powersave Standstill: ON\n";
     }else
     {
-        std::cout<<"Powersave Standstill: OFF"<<std::endl;
+        std::cout<<"Powersave Standstill: OFF\n";
     }
-    std::cout<<"Sensor IP Address 0: "<<c.SensorIPAddress_0<<std::endl;
-    std::cout<<"Sensor IP Address 1: "<<c.SensorIPAddress_1<<std::endl;
+    std::cout<<"Sensor IP Address 0: "<<c.SensorIPAddress_0<<"\n";
+    std::cout<<"Sensor IP Address 1: "<<c.SensorIPAddress_1<<"\n";
     
 }
 static void printStatus(UDPStatus s)
 {
-    std::cout<<"Status: "<<std::endl;
-    std::cout<<"Longitudinal Pos: "<<s.Longitudinal<<std::endl;
-    std::cout<<"Lateral Pos: "<<s.Lateral<<std::endl;
-    std::cout<<"Vertical Pos: "<<s.Vertical<<std::endl;
-    std::cout<<"Yaw: "<<s.Yaw<<std::endl;
-    std::cout<<"Pitch: "<<s.Pitch<<std::endl;
+    std::cout<<"Status: \n";
+    std::cout<<"Longitudinal Pos: "<<s.Longitudinal<<"\n";
+    std::cout<<"Lateral Pos: "<<s.Lateral<<"\n";
+    std::cout<<"Vertical Pos: "<<s.Vertical<<"\n";
+    std::cout<<"Yaw: "<<s.Yaw<<"\n";
+    std::cout<<"Pitch: "<<s.Pitch<<"\n";
     if(s.PlugOrientation==1)
     {
-        std::cout<<"Plug Orientation: LEFT"<<std::endl;
+        std::cout<<"Plug Orientation: LEFT\n";
     }else
     {
-        std::cout<<"Plug Orientation: RIGHT"<<std::endl;
+        std::cout<<"Plug Orientation: RIGHT\n";
     }
-    std::cout<<"Vehivle Length: "<<s.Length<<std::endl;
-    std::cout<<"Vehicle Width: "<<s.Width<<std::endl;
-    std::cout<<"Vehicle Height: "<<s.Height<<std::endl;
-    std::cout<<"Vehicle WheelBase: "<<s.Wheelbase<<std::endl;
-    std::cout<<"Max Detection Dist: "<<s.MaximunDistance<<std::endl;
+    std::cout<<"Vehivle Length: "<<s.Length<<"\n";
+    std::cout<<"Vehicle Width: "<<s.Width<<"\n";
+    std::cout<<"Vehicle Height: "<<s.Height<<"\n";
+    std::cout<<"Vehicle WheelBase: "<<s.Wheelbase<<"\n";
+    std::cout<<"Max Detection Dist: "<<s.MaximunDistance<<"\n";
     switch (s.FrequencySlot)
     {
     case 0:
-        std::cout<<"Center Frequency: LOW"<<std::endl;
+        std::cout<<"Center Frequency: LOW\n";
         break;
     case 1:
-        std::cout<<"Center Frequency: MID"<<std::endl;
+        std::cout<<"Center Frequency: MID\n";
         break;
     default:
-        std::cout<<"Center Frequency: HIGH"<<std::endl;
+        std::cout<<"Center Frequency: HIGH\n";
         break;
     }
-    std::cout<<"Cycle Time: "<<s.CycleTime<<std::endl;
-    std::cout<<"Cycle Offset: "<<(int)s.TimeSlot<<std::endl;
+    std::cout<<"Cycle Time: "<<s.CycleTime<<"\n";
+    std::cout<<"Cycle Offset: "<<(int)s.TimeSlot<<"\n";
     if(s.HCC==1)
     {
-        std::cout<<"Country Code: WORLDWIDE"<<std::endl;
+        std::cout<<"Country Code: WORLDWIDE\n";
     }else
     {
-        std::cout<<"Country Code: JAPAN"<<std::endl;
+        std::cout<<"Country Code: JAPAN\n";
     }
     if (s.Powersave_Standstill==1)
     {
-        std::cout<<"Powersave Standstill: ON"<<std::endl;
+        std::cout<<"Powersave Standstill: ON\n";
     }else
     {
-        std::cout<<"Powersave Standstill: OFF"<<std::endl;
+        std::cout<<"Powersave Standstill: OFF\n";
     }
-    std::cout<<"Sensor IP Address 0: "<<s.SensorIPAddress_0<<std::endl;
-    std::cout<<"Sensor IP Address 1: "<<s.SensorIPAddress_1<<std::endl;
+    std::cout<<"Sensor IP Address 0: "<<s.SensorIPAddress_0<<"\n";
+    std::cout<<"Sensor IP Address 1: "<<s.SensorIPAddress_1<<"\n";
     
+    std::cout << std::endl; // Flush only at the end of the message
 }
 
 /**
@@ -429,7 +430,7 @@ int main(int argc,char* argv[]){
 
         //radar characteristics.
         c.MaximumDistance=max_dist.getValue();
-        std::cout<<c.MaximumDistance<<std::endl;
+        std::cout<<c.MaximumDistance<<"\n";
         c.FrequencySlot=new_frequency_slot.getValue();
         c.CycleTime=new_cycle_time.getValue();
         c.TimeSlot=new_cycle_offset.getValue();
@@ -452,19 +453,19 @@ int main(int argc,char* argv[]){
         {   
             if (c.NewSensorMounting==1)
             {
-                std::cout<<"Changing the sensor mounting Possition"<<std::endl;
+                std::cout<<"Changing the sensor mounting Possition \n";
             }
             if (c.NewVehicleParameters==1)
             {
-                std::cout<<"Changing the vehicle parameters"<<std::endl;
+                std::cout<<"Changing the vehicle parameters\n";
             }
             if (c.NewRadarParameters==1)
             {
-                std::cout<<"Changing the Radar parameters"<<std::endl;
+                std::cout<<"Changing the Radar parameters\n";
             }
             if (c.NewNetworkConfiguration==1)
             {
-                std::cout<<"Changing the Network Configuration"<<std::endl;
+                std::cout<<"Changing the Network Configuration\n";
             }
             //change endianness
             c.ServiceID=0;
