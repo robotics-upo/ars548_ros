@@ -2,7 +2,7 @@ ARS_548_RDI Driver:
 ================
 Introduction:
 ---
-This is a ROS driver for the Continental ARS_548 4D Radar created by the Service Robotics Lab from the Pablo de Olavide University (Spain). The driver is pending to be tested in ROS Noetic.
+This is a ROS driver for the Continental ARS_548 4D Radar created by the Service Robotics Lab from the Pablo de Olavide University (Spain). The driver has been tested in ROS Noetic.
 
 This driver is used to connect with the ARS_548_RDI radar and get all of the data it sends.
 
