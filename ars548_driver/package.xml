@@ -3,7 +3,7 @@
 <package format="3">
   <name>ars548_driver</name>
   <version>1.0.1</version>
-  <description>TODO: Package description</description>
+  <description>ROS2 node that reads and processes data obtained from the ARS548 Continental 4D Radar Sensor</description>
   <maintainer email="dalejo@us.es">David Alejo Teissière</maintainer>
   <author email="ffercal@upo.es">Fernando Fernández Calatayud</author>
   <license>MIT</license>
