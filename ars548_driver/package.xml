@@ -6,7 +6,7 @@
   <description>TODO: Package description</description>
   <maintainer email="dalejo@us.es">David Alejo Teissière</maintainer>
   <author email="ffercal@upo.es">Fernando Fernández Calatayud</author>
-  <license>TODO: License declaration</license>
+  <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <depend>rclcpp</depend>
