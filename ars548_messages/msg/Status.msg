@@ -23,13 +23,13 @@ uint8 powersave_standstill #Power saving in standstill
 uint32 sensoripaddress_0 #Sensor IP address
 uint32 sensoripaddress_1 #Reserved
 uint8 configurationcounter #Counter that counts up if new configuration has been received and accepted
-uint8 status_longitudinalvelocity #Signals if current VDY is OK or timed out
-uint8 status_longitudinalacceleration #Signals if current VDY is OK or timed out
-uint8 status_lateralacceleration #Signals if current VDY is OK or timed out
-uint8 status_yawrate #Signals if current VDY is OK or timed out
-uint8 status_steeringangle #Signals if current VDY is OK or timed out
-uint8 status_drivingdirection #Signals if current VDY is OK or timed out
-uint8 status_characteristicspeed #(Unused) Signals if current VDY is OK or timed out.
+uint8 status_longitudinalvelocity #Signals if current value is OK or timed out
+uint8 status_longitudinalacceleration #Signals if current value is OK or timed out
+uint8 status_lateralacceleration #Signals if current value is OK or timed out
+uint8 status_yawrate #Signals if current value is OK or timed out
+uint8 status_steeringangle #Signals if current value is OK or timed out
+uint8 status_drivingdirection #Signals if current value is OK or timed out
+uint8 status_characteristicspeed #(Unused) Signals if current value is OK or timed out.
 uint8 status_radarstatus #Signals if Radar Status is OK
 uint8 status_voltagestatus # Bitfield to report under- and overvoltage errors
 uint8 status_temperaturestatus #Bitfield to report under- and overtemperature errors
