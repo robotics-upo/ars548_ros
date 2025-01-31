@@ -4,6 +4,8 @@
  * @brief ars548_driver is a class that is used to obtain all of the data from the sensor, translates it and sends it to the user for later use.
  * It also copies part of the received data and sends it to Rviz for the visualization of the results. 
  */
+
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -27,13 +29,11 @@ using namespace std::chrono_literals;
 /**
  * @brief Data obtained from the RadarSensors_Annex_AES548_IO SW 05.48.04.pdf 
  */
-#define DEFAULT_RADAR_IP "224.0.2.2"
-#define RADAR_INTERFACE "10.13.1.166"
+#define DEFAULT_IP "10.13.1.166"
+#define MULTICAST_IP "224.0.2.2"
 #define DEFAULT_RADAR_PORT 42102
 #define DEFAULT_FRAME_ID "ARS_548" 
 #define MSGBUFSIZE 102400
-#define MAX_OBJECTS 50
-#define MAX_DETECTIONS 800
 #define STATUS_MESSAGE_METHOD_ID 380
 #define OBJECT_MESSAGE_METHOD_ID 329
 #define DETECTION_MESSAGE_METHOD_ID 336
@@ -56,6 +56,8 @@ using namespace std::chrono_literals;
 class ars548_driver : public rclcpp::Node{    
     
     private:
+
+    std::string radar_ip;
     int methodID;
     char msgbuf[MSGBUFSIZE];
     int fd;
@@ -99,29 +101,7 @@ class ars548_driver : public rclcpp::Node{
         }
         return r;
     }
-    /**
-     * @brief Changes the Endiannes of the status struct. 
-     * 
-     * @param status The UDPStatus struct that is going to be modified.
-     * @return UDPStatus The modified struct. 
-     */
-    static UDPStatus modifyStatus(UDPStatus status){
-        status.Timestamp_Nanoseconds=ChangeEndianness(status.Timestamp_Nanoseconds);
-        status.Timestamp_Seconds=ChangeEndianness(status.Timestamp_Seconds);
-        status.Longitudinal=ChangeEndianness(status.Longitudinal);
-        status.Lateral=ChangeEndianness(status.Lateral);
-        status.Vertical=ChangeEndianness(status.Vertical);
-        status.Yaw=ChangeEndianness(status.Yaw);
-        status.Pitch=ChangeEndianness(status.Pitch);
-        status.Length=ChangeEndianness(status.Length);
-        status.Width=ChangeEndianness(status.Width);
-        status.Height=ChangeEndianness(status.Height);
-        status.Wheelbase=ChangeEndianness(status.Wheelbase);
-        status.MaximunDistance=ChangeEndianness(status.MaximunDistance);
-        status.SensorIPAddress_0=ChangeEndianness(status.SensorIPAddress_0);
-        status.SensorIPAddress_1=ChangeEndianness(status.SensorIPAddress_1);
-        return status;
-    }
+    
     private:
     /**
      * @brief Changes the endiannes of the Object_List struct
@@ -129,110 +109,7 @@ class ars548_driver : public rclcpp::Node{
      * @param object_List The Object_List struct that is going to be modified.
      * @return Object_List The modified Struct.
      */
-    Object_List modifyObjectList(Object_List object_List){
-        object_List.CRC=ChangeEndianness(object_List.CRC);
-        object_List.Length=ChangeEndianness(object_List.Length);
-        object_List.SQC=ChangeEndianness(object_List.SQC);
-        object_List.DataID=ChangeEndianness(object_List.DataID);
-        object_List.Timestamp_Nanoseconds=ChangeEndianness(object_List.Timestamp_Nanoseconds);
-        object_List.Timestamp_Seconds=ChangeEndianness(object_List.Timestamp_Seconds);
-        object_List.EventDataQualifier=ChangeEndianness(object_List.EventDataQualifier);
-        object_List.ObjectList_NumOfObjects=ChangeEndianness(object_List.ObjectList_NumOfObjects);
-        if (object_List.ObjectList_NumOfObjects>50){
-            object_List.ObjectList_NumOfObjects=50;
-        }
-        for(u_int32_t i = 0; i<object_List.ObjectList_NumOfObjects;++i){
-            object_List.ObjectList_Objects[i].u_StatusSensor=ChangeEndianness(object_List.ObjectList_Objects[i].u_StatusSensor);
-            object_List.ObjectList_Objects[i].u_ID=ChangeEndianness(object_List.ObjectList_Objects[i].u_ID);
-            object_List.ObjectList_Objects[i].u_Age=ChangeEndianness(object_List.ObjectList_Objects[i].u_Age);
-            object_List.ObjectList_Objects[i].u_Position_InvalidFlags=ChangeEndianness(object_List.ObjectList_Objects[i].u_Position_InvalidFlags);
-            object_List.ObjectList_Objects[i].u_Position_X=ChangeEndianness(object_List.ObjectList_Objects[i].u_Position_X);
-            object_List.ObjectList_Objects[i].u_Position_X_STD=ChangeEndianness(object_List.ObjectList_Objects[i].u_Position_X_STD);
-            object_List.ObjectList_Objects[i].u_Position_Y=ChangeEndianness(object_List.ObjectList_Objects[i].u_Position_Y);
-            object_List.ObjectList_Objects[i].u_Position_Y_STD=ChangeEndianness(object_List.ObjectList_Objects[i].u_Position_Y_STD);
-            object_List.ObjectList_Objects[i].u_Position_Z=ChangeEndianness(object_List.ObjectList_Objects[i].u_Position_Z);
-            object_List.ObjectList_Objects[i].u_Position_Z_STD=ChangeEndianness(object_List.ObjectList_Objects[i].u_Position_Z_STD);
-            object_List.ObjectList_Objects[i].u_Position_CovarianceXY=ChangeEndianness(object_List.ObjectList_Objects[i].u_Position_CovarianceXY);
-            object_List.ObjectList_Objects[i].u_Position_Orientation=ChangeEndianness(object_List.ObjectList_Objects[i].u_Position_Orientation);
-            object_List.ObjectList_Objects[i].u_Position_Orientation_STD=ChangeEndianness(object_List.ObjectList_Objects[i].u_Position_Orientation_STD);
-            object_List.ObjectList_Objects[i].u_Existence_Probability=ChangeEndianness(object_List.ObjectList_Objects[i].u_Existence_Probability);
-            object_List.ObjectList_Objects[i].u_Existence_PPV=ChangeEndianness(object_List.ObjectList_Objects[i].u_Existence_PPV);
-            object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_X=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_X);
-            object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_X_STD=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_X_STD);
-            object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_Y=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_Y);
-            object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_Y_STD=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_Y_STD);
-            object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_CovarianceXY=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_CovarianceXY);
-            object_List.ObjectList_Objects[i].f_Dynamics_RelVel_X=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_RelVel_X);
-            object_List.ObjectList_Objects[i].f_Dynamics_RelVel_X_STD=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_RelVel_X_STD);
-            object_List.ObjectList_Objects[i].f_Dynamics_RelVel_Y=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_RelVel_Y);
-            object_List.ObjectList_Objects[i].f_Dynamics_RelVel_Y_STD=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_RelVel_Y_STD);
-            object_List.ObjectList_Objects[i].f_Dynamics_RelVel_CovarianceXY=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_RelVel_CovarianceXY);
-            object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_X=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_X);
-            object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_X_STD=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_X_STD);
-            object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_Y=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_Y);
-            object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_Y_STD=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_Y_STD);
-            object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_CovarianceXY=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_CovarianceXY);
-            object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_X=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_Y_STD);
-            object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_CovarianceXY=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_CovarianceXY);
-            object_List.ObjectList_Objects[i].u_Dynamics_Orientation_Rate_Mean=ChangeEndianness(object_List.ObjectList_Objects[i].u_Dynamics_Orientation_Rate_Mean);
-            object_List.ObjectList_Objects[i].u_Dynamics_Orientation_Rate_STD=ChangeEndianness(object_List.ObjectList_Objects[i].u_Dynamics_Orientation_Rate_STD);
-            object_List.ObjectList_Objects[i].u_Shape_Length_Status=ChangeEndianness(object_List.ObjectList_Objects[i].u_Shape_Length_Status);
-            object_List.ObjectList_Objects[i].u_Shape_Length_Edge_Mean=ChangeEndianness(object_List.ObjectList_Objects[i].u_Shape_Length_Edge_Mean);
-            object_List.ObjectList_Objects[i].u_Shape_Length_Edge_STD=ChangeEndianness(object_List.ObjectList_Objects[i].u_Shape_Length_Edge_STD);
-            object_List.ObjectList_Objects[i].u_Shape_Width_Status=ChangeEndianness(object_List.ObjectList_Objects[i].u_Shape_Width_Status);
-            object_List.ObjectList_Objects[i].u_Shape_Width_Edge_Mean=ChangeEndianness(object_List.ObjectList_Objects[i].u_Shape_Width_Edge_Mean);
-            object_List.ObjectList_Objects[i].u_Shape_Width_Edge_STD=ChangeEndianness(object_List.ObjectList_Objects[i].u_Shape_Width_Edge_STD);
-        }
-        return object_List;
-    }
-    /**
-     * @brief Changes the endianness of the DetectionList struct.
-     * 
-     * @param detectionList The DetectionList struct that is going to be modified.
-     * @return DetectionList The modified struct.
-     */
-    DetectionList modifyDetectionList(DetectionList detectionList){
-        detectionList.CRC=ChangeEndianness(detectionList.CRC);
-        detectionList.Length=ChangeEndianness(detectionList.Length);
-        detectionList.SQC=ChangeEndianness(detectionList.SQC);
-        detectionList.DataID=ChangeEndianness(detectionList.DataID);
-        detectionList.Timestamp_Nanoseconds=ChangeEndianness(detectionList.Timestamp_Nanoseconds);
-        detectionList.Timestamp_Seconds=ChangeEndianness(detectionList.Timestamp_Seconds);
-        detectionList.EventDataQualifier=ChangeEndianness(detectionList.EventDataQualifier);
-        detectionList.Origin_InvalidFlags=ChangeEndianness(detectionList.Origin_InvalidFlags);
-        detectionList.Origin_Xpos=ChangeEndianness(detectionList.Origin_Xpos);
-        detectionList.Origin_Xstd=ChangeEndianness(detectionList.Origin_Xstd);
-        detectionList.Origin_Ypos=ChangeEndianness(detectionList.Origin_Ypos);
-        detectionList.Origin_Ystd=ChangeEndianness(detectionList.Origin_Ystd);
-        detectionList.Origin_Zpos=ChangeEndianness(detectionList.Origin_Zpos);
-        detectionList.Origin_Zstd=ChangeEndianness(detectionList.Origin_Zstd);
-        detectionList.Origin_Roll=ChangeEndianness(detectionList.Origin_Roll);
-        detectionList.Origin_Rollstd=ChangeEndianness(detectionList.Origin_Rollstd);
-        detectionList.Origin_Pitch=ChangeEndianness(detectionList.Origin_Pitch);
-        detectionList.Origin_Pitchstd=ChangeEndianness(detectionList.Origin_Pitchstd);
-        detectionList.Origin_Yaw=ChangeEndianness(detectionList.Origin_Yaw);
-        detectionList.Origin_Yawstd=ChangeEndianness(detectionList.Origin_Yawstd);
-        detectionList.List_NumOfDetections=ChangeEndianness(detectionList.List_NumOfDetections);
-        detectionList.List_RadVelDomain_Min=ChangeEndianness(detectionList.List_RadVelDomain_Min);
-        detectionList.List_RadVelDomain_Max=ChangeEndianness(detectionList.List_RadVelDomain_Max);
-        detectionList.Aln_AzimuthCorrection=ChangeEndianness(detectionList.Aln_AzimuthCorrection);
-        detectionList.Aln_ElevationCorrection=ChangeEndianness(detectionList.Aln_ElevationCorrection);
-        for(uint64_t i=0; i<detectionList.List_NumOfDetections;i++){
-            //Setting the detection data to littleEndian
-            detectionList.List_Detections[i].f_AzimuthAngle=ChangeEndianness(detectionList.List_Detections[i].f_AzimuthAngle);
-            detectionList.List_Detections[i].f_AzimuthAngleSTD=ChangeEndianness(detectionList.List_Detections[i].f_AzimuthAngleSTD);
-            detectionList.List_Detections[i].f_ElevationAngle=ChangeEndianness(detectionList.List_Detections[i].f_ElevationAngle);
-            detectionList.List_Detections[i].f_ElevationAngleSTD=ChangeEndianness(detectionList.List_Detections[i].f_ElevationAngleSTD);
-            detectionList.List_Detections[i].f_Range=ChangeEndianness(detectionList.List_Detections[i].f_Range);
-            detectionList.List_Detections[i].f_RangeSTD=ChangeEndianness(detectionList.List_Detections[i].f_RangeSTD);
-            detectionList.List_Detections[i].f_RangeRate=ChangeEndianness(detectionList.List_Detections[i].f_RangeRate);
-            detectionList.List_Detections[i].f_RangeRateSTD=ChangeEndianness(detectionList.List_Detections[i].f_RangeRateSTD);
-            detectionList.List_Detections[i].u_MeasurementID=ChangeEndianness(detectionList.List_Detections[i].u_MeasurementID);
-            detectionList.List_Detections[i].u_ObjectID=ChangeEndianness(detectionList.List_Detections[i].u_ObjectID);
-            detectionList.List_Detections[i].u_SortIndex=ChangeEndianness(detectionList.List_Detections[i].u_SortIndex);
-        }
-        return detectionList;
-    }
+    
     /**
      * @brief Fills the Status Messsage.
      * 
@@ -286,7 +163,9 @@ class ars548_driver : public rclcpp::Node{
      * @param clock The clock used to fill the timestamp of the message.
      * 
      */
-    void fillMessageObject(ars548_messages::msg::ObjectList &objectMessage,Object_List object_List,rclcpp::Clock clock){
+    void fillMessageObject(ars548_messages::msg::ObjectList &objectMessage,
+                           ObjectList object_List,
+                           rclcpp::Clock clock){
         objectMessage.crc=object_List.CRC;
         objectMessage.length=object_List.Length;
         objectMessage.sqc=object_List.SQC;
@@ -300,7 +179,7 @@ class ars548_driver : public rclcpp::Node{
         
         objectMessage.header.frame_id=this->frame_ID;
         objectMessage.header.stamp=clock.now();
-        for(u_int32_t i =0; i<object_List.ObjectList_NumOfObjects;++i){
+        for(u_int32_t i = 0; i < object_List.ObjectList_NumOfObjects;++i){
             objectMessage.objectlist_objects[i].u_statussensor=object_List.ObjectList_Objects[i].u_StatusSensor;
             objectMessage.objectlist_objects[i].u_id=object_List.ObjectList_Objects[i].u_ID;
             objectMessage.objectlist_objects[i].u_age=object_List.ObjectList_Objects[i].u_Age;
@@ -366,7 +245,6 @@ class ars548_driver : public rclcpp::Node{
             objectMessage.objectlist_objects[i].f_dynamics_relvel_y=object_List.ObjectList_Objects[i].f_Dynamics_RelVel_Y;
             objectMessage.objectlist_objects[i].f_dynamics_relvel_y_std=object_List.ObjectList_Objects[i].f_Dynamics_RelVel_Y_STD;  
         }
-        
     }
     /**
      * @brief Fills the DetectionList message.
@@ -451,7 +329,7 @@ class ars548_driver : public rclcpp::Node{
      * @param i The iterator used to fill the array of poses with the values of the points obtained from the struct.
      * @return PoseArray.msg. The message filled. 
      */
-    void fillDirectionMessage(geometry_msgs::msg::PoseArray &cloud_Direction,Object_List object_List,u_int32_t i){
+    void fillDirectionMessage(geometry_msgs::msg::PoseArray &cloud_Direction, ObjectList object_List,u_int32_t i){
         tf2::Quaternion q;
         float yaw;
         cloud_Direction.header = std_msgs::msg::Header();
@@ -522,8 +400,8 @@ class ars548_driver : public rclcpp::Node{
         // use setsockopt() to request that the kernel join a multicast group
         //
         struct ip_mreq mreq;
-        mreq.imr_multiaddr.s_addr = inet_addr(this->ars548_IP.c_str());
-        mreq.imr_interface.s_addr = inet_addr(RADAR_INTERFACE);
+        mreq.imr_multiaddr.s_addr = inet_addr(ars548_IP.c_str());
+        mreq.imr_interface.s_addr = inet_addr(radar_ip.c_str());
        
         if (
             setsockopt(
@@ -583,77 +461,16 @@ class ars548_driver : public rclcpp::Node{
                 }
                 break;
             case OBJECT_MESSAGE_PAYLOAD:
-                struct Object_List object_List;
-                object_List=*((struct Object_List *)msgbuf);
-                object_List.ServiceID=ChangeEndianness(object_List.ServiceID);
-                object_List.MethodID=ChangeEndianness(object_List.MethodID);
-                object_List.PayloadLength=ChangeEndianness(object_List.PayloadLength);
-                //Setting the ars548_messages
-                if(object_List.MethodID==OBJECT_MESSAGE_METHOD_ID && object_List.PayloadLength==OBJECT_MESSAGE_PDU_LENGTH){
-                     //Changes all of the > 8bit data to little endian
-                        object_List=modifyObjectList(object_List);
-                        modifierObject.resize(object_List.ObjectList_NumOfObjects);
-                        cloud_Direction.poses.resize(object_List.ObjectList_NumOfObjects);
-                        fillMessageObject(objectMessage,object_List,clock);
-                        
-                        //Changes all of the > 8bit data to little endian inside the 50 element array
-                        fillCloudMessage(cloud_msgObj);
-                        for(u_int32_t i =0; i<object_List.ObjectList_NumOfObjects;++i,++iter_x,++iter_y,++iter_z,++iter_vx,++iter_vy){
-                           // AbsVel=3.6*sqrt(pow(object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_X,2)+pow(object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_Y,2));
-                            *iter_x=object_List.ObjectList_Objects[i].u_Position_X;
-                            *iter_y=object_List.ObjectList_Objects[i].u_Position_Y;
-                            *iter_z=object_List.ObjectList_Objects[i].u_Position_Z;
-                            *iter_vx=object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_X;
-                            *iter_vy=object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_Y;
-                            //To show the direction of the moving object
-                            fillDirectionMessage(cloud_Direction,object_List,i);
-                        } 
-
-                        pubObj->publish(cloud_msgObj);
-                        directionPublisher->publish(cloud_Direction);
-                        objectPublisher->publish(objectMessage);  
-                        RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"),"published object."); 
-                }
+                struct ObjectList object_list;
+                object_list=*((struct ObjectList *)msgbuf);
+                object_list.changeEndianness();
                 break;
             case DETECTION_MESSAGE_PAYLOAD:
                 float posX, posY,posZ;
                 
-                struct DetectionList detectionList;
-                detectionList=*((struct DetectionList *)msgbuf);
-                detectionList.ServiceID=ChangeEndianness(detectionList.ServiceID);
-                detectionList.MethodID=ChangeEndianness(detectionList.MethodID);
-                detectionList.PayloadLength=ChangeEndianness(detectionList.PayloadLength);
-                
-                fillCloudMessage(cloud_msgDetect);
-                
-                if(detectionList.MethodID==DETECTION_MESSAGE_METHOD_ID && detectionList.PayloadLength==DETECTION_MESSAGE_PDU_LENGTH){
-                    detectionList=modifyDetectionList(detectionList);
-                    modifierDetection.resize(static_cast<size_t> (detectionList.List_NumOfDetections));
-                    fillDetectionMessage(detectionMessage,detectionList,clock);
-                        
-                        //Changes all of the > 8bit data to little endian inside the 800 elements array
-                        for(uint64_t i = 0; i < detectionList.List_NumOfDetections;i++,++iter_xD,++iter_yD,++iter_zD,
-                                                                                   ++iter_vD, ++iter_rD, ++iter_RCSD,
-                                                                                   ++iter_azimuthD, ++iter_elevationD){
-                            posX = detectionList.List_Detections[i].f_Range*float(std::cos(detectionList.List_Detections[i].f_ElevationAngle))*float(std::cos(detectionList.List_Detections[i].f_AzimuthAngle));
-                            posY = detectionList.List_Detections[i].f_Range*float(std::cos(detectionList.List_Detections[i].f_ElevationAngle))*float(std::sin(detectionList.List_Detections[i].f_AzimuthAngle));
-                            posZ = detectionList.List_Detections[i].f_Range*float(std::sin(detectionList.List_Detections[i].f_ElevationAngle));
-                            RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"),"Detection possition \n x: %f\n y: %f\n z:%f.",posX,posY,posZ);
-                            *iter_xD = posX;
-                            *iter_yD = posY;
-                            *iter_zD = posZ;
-                            *iter_rD = detectionList.List_Detections[i].f_Range;
-                            *iter_vD = detectionList.List_Detections[i].f_RangeRate;
-                            *iter_RCSD = detectionList.List_Detections[i].s_RCS;
-                            *iter_azimuthD = detectionList.List_Detections[i].f_AzimuthAngle;
-                            *iter_elevationD = detectionList.List_Detections[i].f_ElevationAngle;
-
-                        }
-                        pubDetect->publish(cloud_msgDetect);
-                        detectionsPublisher->publish(detectionMessage);
-                        RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"),"published Detection.");
-   
-                }             
+                struct DetectionList detection_list;
+                detection_list=*((struct DetectionList *)msgbuf);
+                detection_list.changeEndianness();
                 break;
             }
         }
@@ -661,7 +478,7 @@ class ars548_driver : public rclcpp::Node{
 
 
     public:
-    static std::string ars548_IP;
+    static std::string ars548_IP, ars548_MULTICAST_IP;
     std::string frame_ID;
     static int ars548_Port;
     /**
@@ -671,11 +488,8 @@ class ars548_driver : public rclcpp::Node{
         if(nbytes==STATUS_MESSAGE_PAYLOAD)
         {
             status = *((struct UDPStatus *)buffer);
-            status.ServiceID=ChangeEndianness(status.ServiceID);
-            status.MethodID=ChangeEndianness(status.MethodID);
-            status.PayloadLength=ChangeEndianness(status.PayloadLength);
+            status.changeEndianness();
             if(status.MethodID==STATUS_MESSAGE_METHOD_ID && status.PayloadLength==STATUS_MESSAGE_PDU_LENGTH){
-                status=modifyStatus(status);
                 return true;
             }
         }
@@ -687,11 +501,13 @@ class ars548_driver : public rclcpp::Node{
      */
     ars548_driver():Node("ars_548_driver_with_parameters"),modifierObject(cloud_msgObj),modifierDetection(cloud_msgDetect){
         //Parameter declaration so the user can change them
-        this->declare_parameter("radarIP",DEFAULT_RADAR_IP);
+        this->declare_parameter("radarIP",DEFAULT_IP);
         this->declare_parameter("radarPort",DEFAULT_RADAR_PORT);
         this->declare_parameter("frameID",DEFAULT_FRAME_ID);
+        this->declare_parameter("multicastIP", MULTICAST_IP);
         rclcpp::Clock clock;
         this->ars548_IP=this->get_parameter("radarIP").as_string();
+        this->ars548_MULTICAST_IP=this->get_parameter("multicastIP").as_string();
         this->ars548_Port=this->get_parameter("radarPort").as_int();
         this->frame_ID=this->get_parameter("frameID").as_string();
         //Creation of their modifiers
@@ -728,5 +544,6 @@ class ars548_driver : public rclcpp::Node{
     }
     
 };
-std::string ars548_driver::ars548_IP=DEFAULT_RADAR_IP;
+std::string ars548_driver::ars548_IP = DEFAULT_IP;
+std::string ars548_driver::ars548_MULTICAST_IP = MULTICAST_IP;
 int ars548_driver::ars548_Port=DEFAULT_RADAR_PORT;
