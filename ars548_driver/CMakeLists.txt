@@ -5,7 +5,9 @@ project(ars548_driver)
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
-set (CMAKE_BUILD_TYPE Debug)
+
+set (CMAKE_CXX_STANDARD_REQUIRED 23)
+set (CMAKE_BUILD_TYPE Release)
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -23,7 +25,6 @@ ament_target_dependencies(ars548_filter_node rclcpp sensor_msgs ars548_messages 
 
 add_executable(radar_setup src/radar_setup.cpp)
 ament_target_dependencies(radar_setup tf2_geometry_msgs sensor_msgs ars548_messages)
-
 
 install(TARGETS
   ars548_driver
