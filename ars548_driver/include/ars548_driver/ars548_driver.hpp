@@ -29,9 +29,9 @@ using namespace std::chrono_literals;
 /**
  * @brief Data obtained from the RadarSensors_Annex_AES548_IO SW 05.48.04.pdf 
  */
-#define DEFAULT_IP "10.13.1.166"
-#define MULTICAST_IP "224.0.2.2"
-#define DEFAULT_RADAR_PORT 42102
+#define ARS548_DEFAULT_IP "10.13.1.166"
+#define ARS548_MULTICAST_IP "224.0.2.2"
+#define ARS548_DEFAULT_RADAR_PORT 42102
 #define DEFAULT_FRAME_ID "ARS_548" 
 #define MSGBUFSIZE 102400
 #define STATUS_MESSAGE_METHOD_ID 380
@@ -478,7 +478,7 @@ class ars548_driver : public rclcpp::Node{
 
 
     public:
-    static std::string ars548_IP, ars548_MULTICAST_IP;
+    static std::string ars548_IP, ars548_ARS548_MULTICAST_IP;
     std::string frame_ID;
     static int ars548_Port;
     /**
@@ -501,13 +501,13 @@ class ars548_driver : public rclcpp::Node{
      */
     ars548_driver():Node("ars_548_driver_with_parameters"),modifierObject(cloud_msgObj),modifierDetection(cloud_msgDetect){
         //Parameter declaration so the user can change them
-        this->declare_parameter("radarIP",DEFAULT_IP);
-        this->declare_parameter("radarPort",DEFAULT_RADAR_PORT);
-        this->declare_parameter("frameID",DEFAULT_FRAME_ID);
-        this->declare_parameter("multicastIP", MULTICAST_IP);
+        this->declare_parameter("radarIP", ARS548_DEFAULT_IP);
+        this->declare_parameter("radarPort", ARS548_DEFAULT_RADAR_PORT);
+        this->declare_parameter("frameID", DEFAULT_FRAME_ID);
+        this->declare_parameter("multicastIP", ARS548_MULTICAST_IP);
         rclcpp::Clock clock;
         this->ars548_IP=this->get_parameter("radarIP").as_string();
-        this->ars548_MULTICAST_IP=this->get_parameter("multicastIP").as_string();
+        this->ars548_ARS548_MULTICAST_IP=this->get_parameter("multicastIP").as_string();
         this->ars548_Port=this->get_parameter("radarPort").as_int();
         this->frame_ID=this->get_parameter("frameID").as_string();
         //Creation of their modifiers
@@ -544,6 +544,6 @@ class ars548_driver : public rclcpp::Node{
     }
     
 };
-std::string ars548_driver::ars548_IP = DEFAULT_IP;
-std::string ars548_driver::ars548_MULTICAST_IP = MULTICAST_IP;
-int ars548_driver::ars548_Port=DEFAULT_RADAR_PORT;
+std::string ars548_driver::ars548_IP = ARS548_DEFAULT_IP;
+std::string ars548_driver::ars548_ARS548_MULTICAST_IP = ARS548_MULTICAST_IP;
+int ars548_driver::ars548_Port = ARS548_DEFAULT_RADAR_PORT;
