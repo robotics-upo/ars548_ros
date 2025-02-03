@@ -6,7 +6,7 @@
   <description>ROS2 node that reads and processes data obtained from the ARS548 Continental 4D Radar Sensor</description>
   <maintainer email="dalejo@us.es">David Alejo Teissière</maintainer>
   <author email="ffercal@upo.es">Fernando Fernández Calatayud</author>
-  <license>MIT</license>
+  <license>BSD-3</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <depend>rclcpp</depend>

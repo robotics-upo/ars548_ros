@@ -6,7 +6,7 @@
   <description>ROS2 node that has the IDL definition of the messages from the ARS548 Continental 4D Radar Sensor</description>
   <maintainer email="dalejo@us.es">David Alejo Teissière</maintainer>
   <author email="ffercal@upo.es">Fernando Fernández Calatayud</author>
-  <license>MIT</license>
+  <license>BSD-3</license>
 <depend>std_msgs</depend>
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>rosidl_default_generators</buildtool_depend>
