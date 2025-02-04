@@ -350,10 +350,9 @@ class ars548_driver : public rclcpp::Node{
     /**
      * @brief Reads the data received from the radar and sends it to the user and Rviz2.
      * 
-     * @param clock The ROS2 clock used to fill some of the fields of the messages.
      * @return The status of the connection. If it returns 1, there is an error in the execution.
      */
-    int readData(rclcpp::Clock clock){
+    int readData(){
        
         //These are the publishers that send the data in a custom message
         auto statusPublisher=create_publisher<ars548_messages::msg::Status>("Status",10);
@@ -466,8 +465,6 @@ class ars548_driver : public rclcpp::Node{
                 object_list.changeEndianness();
                 break;
             case DETECTION_MESSAGE_PAYLOAD:
-                float posX, posY,posZ;
-                
                 struct DetectionList detection_list;
                 detection_list=*((struct DetectionList *)msgbuf);
                 detection_list.changeEndianness();
@@ -539,7 +536,7 @@ class ars548_driver : public rclcpp::Node{
         modifierDetection.clear();
         cloud_Direction.poses.reserve(SIZE);
         //handler subscription to the three callbacks so we can see if they have been changed
-        readData(clock);
+        readData();
 
     }
     
