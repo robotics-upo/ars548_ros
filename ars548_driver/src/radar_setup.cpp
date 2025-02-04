@@ -117,7 +117,8 @@ static void printConfig(SensorConfiguration c)
     }
     std::cout<<"Sensor IP Address 0: "<<c.SensorIPAddress_0<<"\n";
     std::cout<<"Sensor IP Address 1: "<<c.SensorIPAddress_1<<"\n";
-    
+
+    std::cout << std::endl; // Flush only at the end of the message
 }
 static void printStatus(UDPStatus s)
 {

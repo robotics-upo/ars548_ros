@@ -3,7 +3,7 @@
 #include <ars548_driver/byteswap.hpp>
 #include "object.h"
 
-#define ARS548_MAX_OBJECTS 100
+#define ARS548_MAX_OBJECTS 50
 
 #pragma pack(1)
 

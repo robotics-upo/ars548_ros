@@ -6,7 +6,7 @@
 
 #pragma pack(1)
 
-#define ARS548_MAX_DETECTIONS 2000
+#define ARS548_MAX_DETECTIONS 800
 
 struct DetectionList{
     uint16_t ServiceID;
