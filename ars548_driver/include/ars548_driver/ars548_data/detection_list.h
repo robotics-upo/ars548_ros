@@ -4,7 +4,9 @@
 #include <cstdint>
 #include <ars548_driver/byteswap.hpp>
 
-#pragma pack(4)
+#pragma pack(1)
+
+#define ARS548_MAX_DETECTIONS 2000
 
 struct DetectionList{
     uint16_t ServiceID;

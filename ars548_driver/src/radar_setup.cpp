@@ -228,39 +228,6 @@ static SensorConfiguration changeConfiguration(SensorConfiguration c,UDPStatus s
     return c;
 }
 
-/**
- * @brief Changes the endianness of each field of the sensor configuration struct.
- * @param c The Sensor Configuration structure.
- */
-static SensorConfiguration modifyConfiguration(SensorConfiguration c)
-{
-    c.ServiceID=ars548_driver::ChangeEndianness(c.ServiceID);
-    c.MethodID=ars548_driver::ChangeEndianness(c.MethodID);
-    c.PayloadLength=ars548_driver::ChangeEndianness(c.PayloadLength);
-    c.Longitudinal=ars548_driver::ChangeEndianness(c.Longitudinal);
-    c.Lateral=ars548_driver::ChangeEndianness(c.Lateral);
-    c.Vertical=ars548_driver::ChangeEndianness(c.Vertical);
-    c.Yaw=ars548_driver::ChangeEndianness(c.Yaw);
-    c.Pitch=ars548_driver::ChangeEndianness(c.Pitch);
-    c.PlugOrientation=ars548_driver::ChangeEndianness(c.PlugOrientation);
-    c.Length=ars548_driver::ChangeEndianness(c.Length);
-    c.Width=ars548_driver::ChangeEndianness(c.Width);
-    c.Height=ars548_driver::ChangeEndianness(c.Height);
-    c.Wheelbase=ars548_driver::ChangeEndianness(c.Wheelbase);
-    c.MaximumDistance=ars548_driver::ChangeEndianness(c.MaximumDistance);
-    c.FrequencySlot=ars548_driver::ChangeEndianness(c.FrequencySlot);
-    c.CycleTime=ars548_driver::ChangeEndianness(c.CycleTime);
-    c.TimeSlot=ars548_driver::ChangeEndianness(c.TimeSlot);
-    c.HCC=ars548_driver::ChangeEndianness(c.HCC);
-    c.Powersave_Standstill=ars548_driver::ChangeEndianness(c.Powersave_Standstill);
-    c.SensorIPAddress_0=ars548_driver::ChangeEndianness(c.SensorIPAddress_0);
-    c.SensorIPAddress_1=ars548_driver::ChangeEndianness(c.SensorIPAddress_1);
-    c.NewSensorMounting=ars548_driver::ChangeEndianness(c.NewSensorMounting);
-    c.NewVehicleParameters=ars548_driver::ChangeEndianness(c.NewVehicleParameters);
-    c.NewRadarParameters=ars548_driver::ChangeEndianness(c.NewRadarParameters);
-    c.NewNetworkConfiguration=ars548_driver::ChangeEndianness(c.NewNetworkConfiguration);
-    return c;
-}
 
 int main(int argc,char* argv[]){
     int fdr,fds;//One to receive the data of the radar, the other to send the data to it
@@ -472,7 +439,7 @@ int main(int argc,char* argv[]){
             c.MethodID=390;
             c.PayloadLength=56;
             SensorConfiguration sc;
-            sc=modifyConfiguration(c);
+            c.changeEndianness();
             //send the message to the radar
             fds = socket(AF_INET, SOCK_DGRAM, 0);
             if (fds < 0) {

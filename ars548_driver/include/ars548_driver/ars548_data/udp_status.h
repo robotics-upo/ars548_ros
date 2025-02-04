@@ -47,10 +47,8 @@ struct UDPStatus {
 };
 #pragma pack(4)
 /**
- * @brief Changes the Endiannes of the status struct. 
+ * @brief Changes the Endiannes of the status struct.  (uint8_t fields don't need to)
  * 
- * @param status The UDPStatus struct that is going to be modified.
- * @return UDPStatus The modified struct. 
  */
 inline void UDPStatus::changeEndianness(){
     Timestamp_Nanoseconds=byteswap(Timestamp_Nanoseconds);

@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <ars548_driver/byteswap.hpp>
 
 #pragma pack(1)
 struct Detection{

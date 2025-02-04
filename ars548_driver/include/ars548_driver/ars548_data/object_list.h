@@ -5,6 +5,8 @@
 
 #define ARS548_MAX_OBJECTS 100
 
+#pragma pack(1)
+
 struct ObjectList{
     uint16_t ServiceID;
     uint16_t MethodID;
@@ -41,3 +43,5 @@ void ObjectList::changeEndianness() {
         ObjectList_Objects[i].changeEndianness();
     }
 }
+
+#pragma pack(4)

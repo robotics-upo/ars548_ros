@@ -2,6 +2,8 @@
 #include <cstdint>
 #include <ars548_driver/byteswap.hpp>
 
+#pragma pack(1)
+
 struct Object{
     uint16_t u_StatusSensor;
     uint32_t u_ID;
@@ -70,6 +72,8 @@ struct Object{
 
     inline void changeEndianness();
 };
+
+#pragma pack(4)
 
 void Object::changeEndianness() {
     u_StatusSensor = byteswap(u_StatusSensor);
