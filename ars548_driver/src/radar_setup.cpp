@@ -19,216 +19,9 @@
 #define RADAR_INTERFACE "10.13.1.166"
 #define CONFIGURATION_SOURCE_PORT 42401
 #define CONFIGURATION_DESTINATION_PORT 42101
-#define CONFIGURATION_METHOD_ID 390
-#define CONFIGURATION_MESSAGE_ID 390
-#define CONFIGURATION_PDU_LENGTH 56
-#define CONFIGURATION_UDP_PAYLOAD 64
-#define CONFIGURATION_UDP_LENGTH 72
+
 #define NEW_IP "0.0.0.0"
 #define RADAR_IP "10.13.1.113"
-
-
-static bool isConfigEqualsToStatus(SensorConfiguration c,UDPStatus s){
-    bool isEqual=true;
-    if (c.Longitudinal!=s.Longitudinal)
-        isEqual=false;
-    if (c.Lateral!=s.Lateral)
-        isEqual=false;
-    if (c.Vertical!=s.Vertical)
-        isEqual=false;
-    if (c.Yaw!=s.Yaw)
-        isEqual=false;
-    if (c.Pitch!=s.Pitch)
-        isEqual=false;
-    if (c.PlugOrientation!=s.PlugOrientation)
-        isEqual=false;
-    if (c.Length!=s.Length)
-        isEqual=false;
-    if (c.Width!=s.Width)
-        isEqual=false;
-    if (c.Height!=s.Height)
-        isEqual=false;
-    if (c.Wheelbase!=s.Wheelbase)
-        isEqual=false;
-    if(c.FrequencySlot!=s.FrequencySlot)
-        isEqual=false;
-    if (c.MaximumDistance!=s.MaximumDistance)
-        isEqual=false;
-    if(c.CycleTime!=s.CycleTime)
-        isEqual=false;
-    if (c.TimeSlot!=s.TimeSlot)
-        isEqual=false;
-    if (c.HCC!=s.HCC)
-        isEqual=false;
-    if(c.Powersave_Standstill!=s.Powersave_Standstill)
-        isEqual=false;
-    if(c.SensorIPAddress_0!=s.SensorIPAddress_0 && c.SensorIPAddress_0!=inet_addr(NEW_IP)&& c.SensorIPAddress_0!=0)
-        isEqual=false;
-    return isEqual;
-}
-
-static void printConfig(SensorConfiguration c)
-{
-    std::cout<<"Config: \n";
-    std::cout<<"Longitudinal Pos: "<<c.Longitudinal<<"\n";
-    std::cout<<"Lateral Pos: "<<c.Lateral<<"\n";
-    std::cout<<"Vertical Pos: "<<c.Vertical<<"\n";
-    std::cout<<"Yaw: "<<c.Yaw<<"\n";
-    std::cout<<"Pitch: "<<c.Pitch<<"\n";
-    if(c.PlugOrientation==1)
-    {
-        std::cout<<"Plug Orientation: LEFT\n";
-    }else
-    {
-        std::cout<<"Plug Orientation: RIGHT\n";
-    }
-    std::cout<<"Vehicle Length: "<<c.Length<<"\n";
-    std::cout<<"Vehicle Width: "<<c.Width<<"\n";
-    std::cout<<"Vehicle Height: "<<c.Height<<"\n";
-    std::cout<<"Vehicle WheelBase: "<<c.Wheelbase<<"\n";
-    std::cout<<"Max Detection Dist: "<<c.MaximumDistance<<"\n";
-    switch (c.FrequencySlot)
-    {
-    case 0:
-        std::cout<<"Center Frequency: LOW\n";
-        break;
-    case 1:
-        std::cout<<"Center Frequency: MID\n";
-        break;
-    default:
-        std::cout<<"Center Frequency: HIGH\n";
-        break;
-    }
-    std::cout<<"Cycle Time: "<<c.CycleTime<<"\n";
-    std::cout<<"Cycle Offset: "<<(int)c.TimeSlot<<"\n";
-    if(c.HCC==1)
-    {
-        std::cout<<"Country Code: WORLDWIDE\n";
-    }else
-    {
-        std::cout<<"Country Code: JAPAN\n";
-    }
-    if (c.Powersave_Standstill==1)
-    {
-        std::cout<<"Powersave Standstill: ON\n";
-    }else
-    {
-        std::cout<<"Powersave Standstill: OFF\n";
-    }
-    std::cout<<"Sensor IP Address 0: "<<c.SensorIPAddress_0<<"\n";
-    std::cout<<"Sensor IP Address 1: "<<c.SensorIPAddress_1<<"\n";
-
-    std::cout << std::endl; // Flush only at the end of the message
-}
-static void printStatus(UDPStatus s)
-{
-    std::cout<<"Status: \n";
-    std::cout<<"Longitudinal Pos: "<<s.Longitudinal<<"\n";
-    std::cout<<"Lateral Pos: "<<s.Lateral<<"\n";
-    std::cout<<"Vertical Pos: "<<s.Vertical<<"\n";
-    std::cout<<"Yaw: "<<s.Yaw<<"\n";
-    std::cout<<"Pitch: "<<s.Pitch<<"\n";
-    if(s.PlugOrientation==1)
-    {
-        std::cout<<"Plug Orientation: LEFT\n";
-    }else
-    {
-        std::cout<<"Plug Orientation: RIGHT\n";
-    }
-    std::cout<<"Vehivle Length: "<<s.Length<<"\n";
-    std::cout<<"Vehicle Width: "<<s.Width<<"\n";
-    std::cout<<"Vehicle Height: "<<s.Height<<"\n";
-    std::cout<<"Vehicle WheelBase: "<<s.Wheelbase<<"\n";
-    std::cout<<"Max Detection Dist: "<<s.MaximumDistance<<"\n";
-    switch (s.FrequencySlot)
-    {
-    case 0:
-        std::cout<<"Center Frequency: LOW\n";
-        break;
-    case 1:
-        std::cout<<"Center Frequency: MID\n";
-        break;
-    default:
-        std::cout<<"Center Frequency: HIGH\n";
-        break;
-    }
-    std::cout<<"Cycle Time: "<<s.CycleTime<<"\n";
-    std::cout<<"Cycle Offset: "<<(int)s.TimeSlot<<"\n";
-    if(s.HCC==1)
-    {
-        std::cout<<"Country Code: WORLDWIDE\n";
-    }else
-    {
-        std::cout<<"Country Code: JAPAN\n";
-    }
-    if (s.Powersave_Standstill==1)
-    {
-        std::cout<<"Powersave Standstill: ON\n";
-    }else
-    {
-        std::cout<<"Powersave Standstill: OFF\n";
-    }
-    std::cout<<"Sensor IP Address 0: "<<s.SensorIPAddress_0<<"\n";
-    std::cout<<"Sensor IP Address 1: "<<s.SensorIPAddress_1<<"\n";
-    
-    std::cout << std::endl; // Flush only at the end of the message
-}
-
-/**
- * @brief Checks if any of the data has been modified by the anchor.
- * @param c The Sensor Configuration struct with the data sent by the user.
- * @param s The UDP Status message used to get all of the default data of the radar.
- */
-static SensorConfiguration changeConfiguration(SensorConfiguration c,UDPStatus s)
-{
-        //Check if the user wants to change the radar possition and orientation
-    if (c.Longitudinal!=s.Longitudinal)
-        c.NewSensorMounting=1;
-    if (c.Lateral!=s.Lateral)
-        c.NewSensorMounting=1;
-    if (c.Vertical!=s.Vertical)
-        c.NewSensorMounting=1;
-    if (c.Yaw!=s.Yaw)
-        c.NewSensorMounting=1;
-    if (c.Pitch!=s.Pitch)
-        c.NewSensorMounting=1;
-    if (c.PlugOrientation!=s.PlugOrientation)
-        c.NewSensorMounting=1;
-    
-    //Check if the user wants to change the vehicle characteristics
-    if (c.Length!=s.Length)
-        c.NewVehicleParameters=1;
-    if (c.Width!=s.Width)
-        c.NewVehicleParameters=1;
-    if (c.Height!=s.Height)
-        c.NewVehicleParameters=1;
-    if (c.Wheelbase!=s.Wheelbase)
-        c.NewVehicleParameters=1;
-    
-    //Check if the user wants to change the radar configuration
-    if(c.FrequencySlot!=s.FrequencySlot)
-        c.NewRadarParameters=1;
-    if (c.MaximumDistance!=s.MaximumDistance)
-    {
-        c.NewRadarParameters=1;
-        if (c.MaximumDistance<190 && c.FrequencySlot!=1)
-            c.FrequencySlot=1;
-    }
-    if(c.CycleTime!=s.CycleTime)
-        c.NewRadarParameters=1;
-    if (c.TimeSlot!=s.TimeSlot)
-        c.NewRadarParameters=1;
-    if (c.HCC!=s.HCC)
-        c.NewRadarParameters=1;
-    if(c.Powersave_Standstill!=s.Powersave_Standstill)
-        c.NewRadarParameters=1;
-
-    // Check if the user wants to change the radar IP.
-    if(c.SensorIPAddress_0!=s.SensorIPAddress_0 && c.SensorIPAddress_0!=inet_addr(NEW_IP))
-        c.NewNetworkConfiguration=1;
-    return c;
-}
-
 
 int main(int argc,char* argv[]){
     int fdr,fds;//One to receive the data of the radar, the other to send the data to it
@@ -415,9 +208,7 @@ int main(int argc,char* argv[]){
         c.NewRadarParameters=0;
         c.NewNetworkConfiguration=0;
 
-        c=changeConfiguration(c,s);
-        //Check if the user wants to modify any of the radar parameters
-        if(c.NewSensorMounting==1||c.NewVehicleParameters==1||c.NewRadarParameters==1||c.NewNetworkConfiguration==1)
+        if (c.changeConfiguration(s)) //Check if the user wants to modify any of the radar parameters
         {   
             if (c.NewSensorMounting==1)
             {
@@ -436,9 +227,8 @@ int main(int argc,char* argv[]){
                 std::cout<<"Changing the Network Configuration\n";
             }
             //change endianness
-            c.ServiceID=0;
-            c.MethodID=390;
-            c.PayloadLength=56;
+            c.setIDsAndPayload();
+            
             SensorConfiguration sc;
             c.changeEndianness();
             //send the message to the radar
@@ -480,13 +270,18 @@ int main(int argc,char* argv[]){
                 return 1;
             }
         }
-        printStatus(s);
-        printConfig(c);
-        if(isConfigEqualsToStatus(c,s))
+        std::cout <<" -------------- Received status updated ------------ \n\n";
+        s.print();
+        std::cout <<"\n\n -------------- Desired configuration -------------- \n\n";
+        c.print();
+        if(c.isEqualToStatus(s))
         {
+            std::cout <<"\n\n Configured OK!!!!!!!!\n\n";
             return 0;
-        }else
+        }
+        else
         {
+            std::cout <<"\n\n Failed to configure the system \n\n";
             return 1;
         }
     }  

@@ -2,7 +2,7 @@
 
 #include "detection.h"
 #include <cstdint>
-#include <ars548_driver/byteswap.hpp>
+#include <ars548_driver/util/byteswap.hpp>
 #include <ars548_messages/msg/detection_list.hpp>
 
 #pragma pack(1)

@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-#include <ars548_driver/byteswap.hpp>
+#include <ars548_driver/util/byteswap.hpp>
 
 #pragma pack(1)
 
