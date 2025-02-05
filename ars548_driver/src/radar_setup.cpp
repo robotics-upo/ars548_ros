@@ -52,7 +52,7 @@ static bool isConfigEqualsToStatus(SensorConfiguration c,UDPStatus s){
         isEqual=false;
     if(c.FrequencySlot!=s.FrequencySlot)
         isEqual=false;
-    if (c.MaximumDistance!=s.MaximunDistance)
+    if (c.MaximumDistance!=s.MaximumDistance)
         isEqual=false;
     if(c.CycleTime!=s.CycleTime)
         isEqual=false;
@@ -139,7 +139,7 @@ static void printStatus(UDPStatus s)
     std::cout<<"Vehicle Width: "<<s.Width<<"\n";
     std::cout<<"Vehicle Height: "<<s.Height<<"\n";
     std::cout<<"Vehicle WheelBase: "<<s.Wheelbase<<"\n";
-    std::cout<<"Max Detection Dist: "<<s.MaximunDistance<<"\n";
+    std::cout<<"Max Detection Dist: "<<s.MaximumDistance<<"\n";
     switch (s.FrequencySlot)
     {
     case 0:
@@ -208,7 +208,7 @@ static SensorConfiguration changeConfiguration(SensorConfiguration c,UDPStatus s
     //Check if the user wants to change the radar configuration
     if(c.FrequencySlot!=s.FrequencySlot)
         c.NewRadarParameters=1;
-    if (c.MaximumDistance!=s.MaximunDistance)
+    if (c.MaximumDistance!=s.MaximumDistance)
     {
         c.NewRadarParameters=1;
         if (c.MaximumDistance<190 && c.FrequencySlot!=1)
@@ -342,7 +342,7 @@ int main(int argc,char* argv[]){
     TCLAP::ValueArg<_Float32>new_vehicle_Height("H","NewHeight","New vehicle height (0.01,100)",false,s.Height,"float");
     TCLAP::ValueArg<_Float32>new_vehicle_Wheelbase("w","NewWheelLength","New vehicle wheelbase (0.01,100)",false,s.Wheelbase,"float");
     //To configure the radar parameters
-    TCLAP::ValueArg<std::uint16_t>max_dist("D","maxDist","New max distance for the radar (93,1514)",false,s.MaximunDistance,"uint16_t");
+    TCLAP::ValueArg<std::uint16_t>max_dist("D","maxDist","New max distance for the radar (93,1514)",false,s.MaximumDistance,"uint16_t");
     TCLAP::ValueArg<std::uint8_t>new_frequency_slot("F","NewFreq","New Frequency Slot for the radar (0=Low,1=Mid,2=High)",false,s.FrequencySlot,"uint8_t");
     TCLAP::ValueArg<std::uint8_t>new_cycle_time("C","Newtime","New cycle time for the radar (50,100)",false,s.CycleTime,"uint8_t");
     TCLAP::ValueArg<std::uint8_t>new_cycle_offset("O","NewOffset","New radar cycle offset (10,90)",false,s.TimeSlot,"uint8_t");

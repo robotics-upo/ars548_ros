@@ -14,7 +14,7 @@ float32 length #Vehicle length
 float32 width #Vehicle width
 float32 height #Vehicle height
 float32 wheelbase #Vehicle wheelbase
-uint16 maximundistance #Maximum detection distance
+uint16 maximumdistance #Maximum detection distance
 uint8 frequencyslot #Center frequency
 uint8 cycletime #Cycle time
 uint8 timeslot #Cycle offset

@@ -27,7 +27,7 @@ struct UDPStatus {
     float Width;
     float Height;
     float Wheelbase;
-    uint16_t MaximunDistance;
+    uint16_t MaximumDistance;
     uint8_t FrequencySlot;
     uint8_t CycleTime;
     uint8_t TimeSlot;
@@ -89,7 +89,7 @@ inline void UDPStatus::changeEndianness(){
     Width = byteswap(Width);
     Height = byteswap(Height);
     Wheelbase = byteswap(Wheelbase);
-    MaximunDistance = byteswap(MaximunDistance);
+    MaximumDistance = byteswap(MaximumDistance);
     SensorIPAddress_0 = byteswap(SensorIPAddress_0);
     SensorIPAddress_1 = byteswap(SensorIPAddress_1);
 }
@@ -111,7 +111,7 @@ inline void UDPStatus::changeEndianness(){
         statusMessage.lateral = Lateral;
         statusMessage.length = Length;
         statusMessage.longitudinal = Longitudinal;
-        statusMessage.maximundistance = MaximunDistance;
+        statusMessage.maximumdistance = MaximumDistance;
         statusMessage.pitch = Pitch;
         statusMessage.plugorientation = PlugOrientation;
         statusMessage.powersave_standstill = PayloadLength;
