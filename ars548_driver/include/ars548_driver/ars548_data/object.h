@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <ars548_driver/byteswap.hpp>
+#include <ars548_messages/msg/detection.hpp>
 
 #pragma pack(1)
 
@@ -71,6 +72,7 @@ struct Object{
     float u_Shape_Width_Edge_STD;
 
     inline void changeEndianness();
+    ars548_messages::msg::Object toMsg();
 };
 
 #pragma pack(4)
@@ -118,5 +120,74 @@ void Object::changeEndianness() {
     u_Shape_Width_Edge_STD = byteswap(u_Shape_Width_Edge_STD);
 }
 
+ars548_messages::msg::Object Object::toMsg() {
+    ars548_messages::msg::Object o;
 
+    o.u_statussensor = u_StatusSensor;
+    o.u_id = u_ID;
+    o.u_age = u_Age;
+    o.u_position_invalidflags = u_Position_InvalidFlags;
+    o.u_position_x = u_Position_X;
+    o.u_position_x_std = u_Position_X_STD;
+    o.u_position_y = u_Position_Y;
+    o.u_position_y_std = u_Position_Y_STD;
+    o.u_position_z = u_Position_Z;
+    o.u_position_z_std = u_Position_Z_STD;
+    o.u_position_covariancexy = u_Position_CovarianceXY;
+    o.u_position_orientation = u_Position_Orientation;
+    o.u_position_orientation_std = u_Position_Orientation_STD;
+    o.u_existence_invalidflags = u_Existence_InvalidFlags;
+    o.u_existence_ppv = u_Existence_PPV;
+    o.u_existence_probability = u_Existence_Probability;
+    o.u_dynamics_absaccel_invalidflags = u_Dynamics_AbsAccel_InvalidFlags;
+    o.u_dynamics_absvel_invalidflags = u_Dynamics_AbsVel_InvalidFlags;
+    o.u_dynamics_orientation_invalidflags = u_Dynamics_Orientation_InvalidFlags;
+    o.u_dynamics_orientation_rate_mean = u_Dynamics_Orientation_Rate_Mean;
+    o.u_dynamics_orientation_rate_std = u_Dynamics_Orientation_Rate_STD;
+    o.u_dynamics_relaccel_invalidflags = u_Dynamics_RelAccel_InvalidFlags;
+    o.u_dynamics_relvel_invalidflags = u_Dynamics_RelVel_InvalidFlags;
+    o.u_shape_length_edge_invalidflags = u_Shape_Length_Edge_InvalidFlags;
+    o.u_shape_length_edge_mean = u_Shape_Length_Edge_Mean;
+    o.u_shape_length_edge_std = u_Shape_Length_Edge_STD;
+    o.u_shape_length_status = u_Shape_Length_Status;
+    o.u_shape_width_edge_invalidflags = u_Shape_Width_Edge_InvalidFlags;
+    o.u_shape_width_edge_mean = u_Shape_Width_Edge_Mean;
+    o.u_shape_width_edge_std = u_Shape_Length_Edge_STD;
+    o.u_shape_width_status = u_Shape_Width_Status;
+    o.u_statusmeasurement = u_StatusMeasurement;
+    o.u_statusmovement = u_StatusMovement;
+    o.u_statussensor = u_StatusSensor;
+    o.u_classification_animal = u_Classification_Animal;
+    o.u_classification_bicycle = u_Classification_Bicycle;
+    o.u_classification_car = u_Classification_Car;
+    o.u_classification_hazard = u_Classification_Hazard;
+    o.u_classification_motorcycle = u_Classification_Motorcycle;
+    o.u_classification_overdrivable = u_Classification_Overdrivable;
+    o.u_classification_pedestrian = u_Classification_Pedestrian;
+    o.u_classification_truck = u_Classification_Truck;
+    o.u_classification_underdrivable = u_Classification_Underdrivable;
+    o.u_classification_unknown = u_Position_CovarianceXY;
+    o.f_dynamics_absaccel_covariancexy = f_Dynamics_AbsAccel_CovarianceXY;
+    o.f_dynamics_absaccel_x = f_Dynamics_AbsAccel_X;
+    o.f_dynamics_absaccel_x_std = f_Dynamics_AbsAccel_X_STD;
+    o.f_dynamics_absaccel_y = f_Dynamics_AbsAccel_Y;
+    o.f_dynamics_absaccel_y_std = f_Dynamics_AbsAccel_Y_STD;
+    o.f_dynamics_absvel_covariancexy = f_Dynamics_AbsVel_CovarianceXY;
+    o.f_dynamics_absvel_x = f_Dynamics_AbsVel_X;
+    o.f_dynamics_absvel_x_std = f_Dynamics_AbsVel_X_STD;
+    o.f_dynamics_absvel_y = f_Dynamics_AbsVel_Y;
+    o.f_dynamics_absvel_y_std = f_Dynamics_AbsVel_Y_STD;
+    o.f_dynamics_relaccel_covariancexy = f_Dynamics_RelAccel_CovarianceXY;
+    o.f_dynamics_relaccel_x = f_Dynamics_RelAccel_X;
+    o.f_dynamics_relaccel_x_std = f_Dynamics_RelAccel_X_STD;
+    o.f_dynamics_relaccel_y = f_Dynamics_RelAccel_Y;
+    o.f_dynamics_relaccel_y_std = f_Dynamics_RelAccel_Y_STD;
+    o.f_dynamics_relvel_covariancexy = f_Dynamics_RelVel_CovarianceXY;
+    o.f_dynamics_relvel_x = f_Dynamics_RelVel_X;
+    o.f_dynamics_relvel_x_std = f_Dynamics_RelVel_X_STD;
+    o.f_dynamics_relvel_y = f_Dynamics_RelVel_Y;
+    o.f_dynamics_relvel_y_std = f_Dynamics_RelVel_Y_STD;  
+
+    return o;
+}
     

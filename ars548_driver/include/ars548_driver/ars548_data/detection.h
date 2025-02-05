@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <ars548_driver/byteswap.hpp>
+#include <ars548_messages/msg/detection.hpp>
 
 #pragma pack(1)
 struct Detection{
@@ -23,6 +24,8 @@ struct Detection{
     uint16_t u_SortIndex;
 
     inline void changeEndianness();
+
+    inline ars548_messages::msg::Detection toMsg();
 };
 
 void Detection::changeEndianness() {
@@ -42,3 +45,26 @@ void Detection::changeEndianness() {
 
 #pragma pack(4)
 
+inline ars548_messages::msg::Detection Detection::toMsg() {
+    ars548_messages::msg::Detection d;
+
+    d.f_azimuthangle = f_AzimuthAngle;
+    d.f_azimuthanglestd = f_AzimuthAngleSTD;
+    d.f_elevationangle = f_ElevationAngle;
+    d.f_elevationanglestd = f_ElevationAngleSTD;
+    d.f_range = f_Range;
+    d.f_rangerate = f_RangeRate;
+    d.f_rangeratestd = f_RangeRateSTD;
+    d.f_rangestd = f_RangeSTD;
+    d.s_rcs = s_RCS;
+    d.u_ambiguityflag = u_AmbiguityFlag;
+    d.u_classification = u_Classification;
+    d.u_invalidflags = u_InvalidFlags;
+    d.u_measurementid = u_MeasurementID;
+    d.u_multitargetprobabilitym = u_MultiTargetProbabilityM;
+    d.u_objectid = u_ObjectID;
+    d.u_positivepredictivevalue = u_PositivePredictiveValue;
+    d.u_sortindex = u_SortIndex;   
+
+    return d;
+}

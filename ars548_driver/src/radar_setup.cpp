@@ -300,9 +300,9 @@ int main(int argc,char* argv[]){
             return 1;
         }
         
-        s = *((struct UDPStatus *)msgbuf);
         
-        while (!ars548_driver::receiveStatusMsg(nbytes,msgbuf,s))
+        
+        while (!s.receiveStatusMsg(nbytes,msgbuf))
         {
             
             nbytes = recvfrom(
@@ -460,7 +460,7 @@ int main(int argc,char* argv[]){
             }
             close(fds);
         }
-        while (!ars548_driver::receiveStatusMsg(nbytes,msgbuf,s)){
+        while (!s.receiveStatusMsg(nbytes,msgbuf)){
             nbytes = recvfrom(
             fdr,
             msgbuf,
