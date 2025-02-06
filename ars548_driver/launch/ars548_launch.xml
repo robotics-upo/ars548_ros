@@ -1,6 +1,7 @@
 <launch>
     <arg name="viz"  default="true"/>
     <arg name="frameID_Radar" default="ARS_548"/>
+    <arg name="localIP" default="10.13.1.166"/>
     <arg name="radarIP" default="10.13.1.113"/>
     <arg name="multicastIP" default="224.0.2.2"/>
     <arg name="radarPort" default="42102"/>

@@ -28,7 +28,8 @@ using namespace std::chrono_literals;
 /**
  * @brief Data obtained from the RadarSensors_Annex_AES548_IO SW 05.48.04.pdf 
  */
-#define ARS548_DEFAULT_IP "10.13.1.166"
+#define ARS548_DEFAULT_LOCAL_IP "10.13.1.166"
+#define ARS548_DEFAULT_IP "10.13.1.113"
 #define ARS548_MULTICAST_IP "224.0.2.2"
 #define ARS548_DEFAULT_RADAR_PORT 42102
 #define DEFAULT_FRAME_ID "ARS_548" 
@@ -123,11 +124,8 @@ class ars548_driver : public rclcpp::Node{
         //
         struct ip_mreq mreq;
         mreq.imr_multiaddr.s_addr = inet_addr(ars548_multicast_ip.c_str());
-        mreq.imr_interface.s_addr = inet_addr(ars548_ip.c_str());
-
-        std::cout << "Multicast IP: " << ars548_multicast_ip << std::endl;
-        std::cout << "Radar IP: " << ars548_ip << std::endl;
-       
+        mreq.imr_interface.s_addr = inet_addr(ars548_local_ip.c_str());
+      
         if (
             setsockopt(
                 fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*) &mreq, sizeof(mreq)
@@ -192,7 +190,7 @@ class ars548_driver : public rclcpp::Node{
     }
 
     public:
-    std::string ars548_ip, ars548_multicast_ip;
+    std::string ars548_ip, ars548_multicast_ip, ars548_local_ip;
     std::string frame_ID;
     static int ars548_Port;
     
@@ -201,12 +199,14 @@ class ars548_driver : public rclcpp::Node{
      */
     ars548_driver():Node("ars_548_driver"),modifierObject(cloud_msgObj),modifierDetection(cloud_msgDetect){
         //Parameter declaration so the user can change them
+        this->declare_parameter("localIP", ARS548_DEFAULT_LOCAL_IP);
         this->declare_parameter("radarIP", ARS548_DEFAULT_IP);
         this->declare_parameter("radarPort", ARS548_DEFAULT_RADAR_PORT);
         this->declare_parameter("frameID", DEFAULT_FRAME_ID);
         this->declare_parameter("multicastIP", ARS548_MULTICAST_IP);
         this->declare_parameter("overrideStamp", true);
         rclcpp::Clock clock;
+        this->ars548_local_ip = this->get_parameter("localIP").as_string();
         this->ars548_ip=this->get_parameter("radarIP").as_string();
         this->ars548_multicast_ip=this->get_parameter("multicastIP").as_string();
         this->ars548_Port=this->get_parameter("radarPort").as_int();
