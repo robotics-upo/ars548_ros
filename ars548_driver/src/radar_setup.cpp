@@ -229,7 +229,6 @@ int main(int argc,char* argv[]){
             //change endianness
             c.setIDsAndPayload();
             
-            SensorConfiguration sc;
             c.changeEndianness();
             //send the message to the radar
             fds = socket(AF_INET, SOCK_DGRAM, 0);
@@ -243,14 +242,17 @@ int main(int argc,char* argv[]){
             addrS.sin_port = htons(CONFIGURATION_DESTINATION_PORT);
             int addrlenS=sizeof(addrS);
             inet_pton(AF_INET, RADAR_IP, &addrS.sin_addr);
-            int sent_bytes=sendto(fds,&sc,sizeof(sc),0, (struct sockaddr *) &addrS,addrlenS);
+            int sent_bytes=sendto(fds,&c,sizeof(c),0, (struct sockaddr *) &addrS,addrlenS);
+            c.changeEndianness();
             if (sent_bytes < 0) {
                     perror("Failed sending the message");
                     return 1;
             }
             close(fds);
         }
-        while (!s.receiveStatusMsg(nbytes,msgbuf)){
+        iterator=0;
+        do{
+            sleep(1);
             nbytes = recvfrom(
             fdr,
             msgbuf,
@@ -269,11 +271,13 @@ int main(int argc,char* argv[]){
                 perror("Could not receive the status data");
                 return 1;
             }
+            iterator++;
         }
-        std::cout <<" -------------- Received status updated ------------ \n\n";
-        s.print();
+        while (!s.receiveStatusMsg(nbytes,msgbuf));
         std::cout <<"\n\n -------------- Desired configuration -------------- \n\n";
         c.print();
+        std::cout <<" -------------- Received status updated ------------ \n\n";
+        s.print();
         if(c.isEqualToStatus(s))
         {
             std::cout <<"\n\n Configured OK!!!!!!!!\n\n";

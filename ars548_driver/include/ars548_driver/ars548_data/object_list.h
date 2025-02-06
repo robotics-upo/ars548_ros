@@ -34,7 +34,7 @@ struct ObjectList{
 
     //! @brief Checks for validity of the message (checks method ID and PayloadLength)
     inline bool isValid() const {
-        return MethodID == OBJECT_MESSAGE_METHOD_ID && PayloadLength == OBJECT_MESSAGE_PAYLOAD;
+        return MethodID == OBJECT_MESSAGE_METHOD_ID && PayloadLength == OBJECT_MESSAGE_PDU_LENGTH;
     }
 
     inline void changeEndianness();

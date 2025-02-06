@@ -1,0 +1,18 @@
+{
+    "python.autoComplete.extraPaths": [
+        "/home/carpio/radar_ws/install/ars548_messages/local/lib/python3.10/dist-packages",
+        "/home/carpio/ros2_ws/install/ouster_sensor_msgs/local/lib/python3.10/dist-packages",
+        "/home/carpio/ros2_ws/install/eliko_messages/local/lib/python3.10/dist-packages",
+        "/home/carpio/ros2_ws/install/ars548_messages/local/lib/python3.10/dist-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/carpio/radar_ws/install/ars548_messages/local/lib/python3.10/dist-packages",
+        "/home/carpio/ros2_ws/install/ouster_sensor_msgs/local/lib/python3.10/dist-packages",
+        "/home/carpio/ros2_ws/install/eliko_messages/local/lib/python3.10/dist-packages",
+        "/home/carpio/ros2_ws/install/ars548_messages/local/lib/python3.10/dist-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ]
+}

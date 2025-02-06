@@ -50,7 +50,7 @@ struct DetectionList{
 
     //! @brief Checks for validity of the message (checks method ID and PayloadLength)
     inline bool isValid() const {
-        return MethodID == DETECTION_MESSAGE_METHOD_ID && PayloadLength == DETECTION_MESSAGE_PAYLOAD;
+        return MethodID == DETECTION_MESSAGE_METHOD_ID && PayloadLength == DETECTION_MESSAGE_PDU_LENGTH;
     }
 
     inline void changeEndianness();

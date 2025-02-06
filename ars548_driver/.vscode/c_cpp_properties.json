@@ -1,0 +1,26 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/carpio/radar_ws/install/ars548_messages/include/**",
+        "/home/carpio/ros2_ws/install/ouster_ros/include/**",
+        "/home/carpio/ros2_ws/install/ouster_sensor_msgs/include/**",
+        "/home/carpio/ros2_ws/install/eliko_messages/include/**",
+        "/home/carpio/ros2_ws/install/ars548_messages/include/**",
+        "/opt/ros/humble/include/**",
+        "/home/carpio/radar_ws/src/ars548_ros/ars548_driver/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}

@@ -52,7 +52,7 @@ struct UDPStatus {
 
     //! @brief Checks for validity of the message (checks method ID and PayloadLength)
     inline bool isValid() const {
-        return MethodID == STATUS_MESSAGE_METHOD_ID && PayloadLength == STATUS_MESSAGE_PAYLOAD;
+        return MethodID == STATUS_MESSAGE_METHOD_ID && PayloadLength == STATUS_MESSAGE_PDU_LENGTH;
     }
 
     inline void changeEndianness();
