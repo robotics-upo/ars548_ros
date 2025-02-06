@@ -64,7 +64,7 @@ int main(int argc,char* argv[]){
     // use setsockopt() to request that the kernel join a multicast group
     //
     struct ip_mreq mreq;
-    mreq.imr_multiaddr.s_addr = inet_addr(ars548_driver::ars548_IP.c_str());
+    mreq.imr_multiaddr.s_addr = inet_addr(ARS548_MULTICAST_IP);
     mreq.imr_interface.s_addr = inet_addr(RADAR_INTERFACE);
     bool connected=true;
     if (

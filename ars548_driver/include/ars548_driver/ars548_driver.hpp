@@ -122,8 +122,8 @@ class ars548_driver : public rclcpp::Node{
         // use setsockopt() to request that the kernel join a multicast group
         //
         struct ip_mreq mreq;
-        mreq.imr_multiaddr.s_addr = inet_addr(ars548_IP.c_str());
-        mreq.imr_interface.s_addr = inet_addr(radar_ip.c_str());
+        mreq.imr_multiaddr.s_addr = inet_addr(ars548_multicast_ip.c_str());
+        mreq.imr_interface.s_addr = inet_addr(ars548_ip.c_str());
        
         if (
             setsockopt(
@@ -189,7 +189,7 @@ class ars548_driver : public rclcpp::Node{
     }
 
     public:
-    static std::string ars548_IP, ars548_ARS548_MULTICAST_IP;
+    std::string ars548_ip, ars548_multicast_ip;
     std::string frame_ID;
     static int ars548_Port;
     
@@ -204,8 +204,8 @@ class ars548_driver : public rclcpp::Node{
         this->declare_parameter("multicastIP", ARS548_MULTICAST_IP);
         this->declare_parameter("overrideStamp", true);
         rclcpp::Clock clock;
-        this->ars548_IP=this->get_parameter("radarIP").as_string();
-        this->ars548_ARS548_MULTICAST_IP=this->get_parameter("multicastIP").as_string();
+        this->ars548_ip=this->get_parameter("radarIP").as_string();
+        this->ars548_multicast_ip=this->get_parameter("multicastIP").as_string();
         this->ars548_Port=this->get_parameter("radarPort").as_int();
         this->frame_ID=this->get_parameter("frameID").as_string();
         this->override_stamp = this->get_parameter("overrideStamp").as_bool();
@@ -241,6 +241,6 @@ class ars548_driver : public rclcpp::Node{
         readData();
     }
 };
-std::string ars548_driver::ars548_IP = ARS548_DEFAULT_IP;
-std::string ars548_driver::ars548_ARS548_MULTICAST_IP = ARS548_MULTICAST_IP;
+//std::string ars548_driver::ars548_ = ARS548_DEFAULT_IP;
+//std::string ars548_driver::ars548_ARS548_MULTICAST_IP = ARS548_MULTICAST_IP;
 int ars548_driver::ars548_Port = ARS548_DEFAULT_RADAR_PORT;
