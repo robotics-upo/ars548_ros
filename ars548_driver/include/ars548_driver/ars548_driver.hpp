@@ -124,6 +124,9 @@ class ars548_driver : public rclcpp::Node{
         struct ip_mreq mreq;
         mreq.imr_multiaddr.s_addr = inet_addr(ars548_multicast_ip.c_str());
         mreq.imr_interface.s_addr = inet_addr(ars548_ip.c_str());
+
+        std::cout << "Multicast IP: " << ars548_multicast_ip << std::endl;
+        std::cout << "Radar IP: " << ars548_ip << std::endl;
        
         if (
             setsockopt(
