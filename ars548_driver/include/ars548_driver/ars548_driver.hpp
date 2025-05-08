@@ -14,7 +14,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include <cstring>
+#include <unistd.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include "rclcpp/rclcpp.hpp"
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 #include <geometry_msgs/msg/pose_array.hpp>
@@ -45,8 +47,9 @@ class ars548_driver : public rclcpp::Node{
     int nbytes;
     float AbsVel;
     std::string answer;
-    std::shared_ptr<rclcpp::ParameterEventHandler> param_subscriber_;
-    std::shared_ptr<rclcpp::ParameterCallbackHandle> cb_handle_;
+    // std::shared_ptr<rclcpp::ParameterEventHandler> param_subscriber_;
+    // std::shared_ptr<rclcpp::ParameterCallbackHandle> cb_handle_;
+    rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr param_callback_handle_;
     
     sensor_msgs::msg::PointCloud2 cloud_msgObj;
     sensor_msgs::msg::PointCloud2 cloud_msgDetect;

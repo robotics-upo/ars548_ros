@@ -15,7 +15,6 @@
         <param name="minimum" value="$(var minimum_velocity)"/>
         <param name="frameID" value="$(var frameID_Filter)"/>
     </node>
-    <node pkg="rviz2" exec="rviz2" name="Visualization" args="-d $(find-pkg-share ars548_driver)/rviz/filter.rviz"/>
     <node pkg="tf2_ros" exec="static_transform_publisher" args="0 0 0 0 0 0 PointCloud ARS_548"/>
    
 </launch>
