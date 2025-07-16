@@ -246,3 +246,9 @@ The parameter list can be obtained by executing the next command:
 ```
     >ros2 run ars548_driver radar_setup.cpp -h
 ```
+
+## Acknowledgements
+
+![Logos](minci.png)
+
+This work was partially supported by the following grants: 1) INSERTION PID2021-127648OB-C31, and 2) RATEC PDC2022-133643-C21 projects, funded by MCIN/AEI/ 10.13039/501100011033 and the "European Union NextGenerationEU / PRTR".
