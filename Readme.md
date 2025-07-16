@@ -247,6 +247,26 @@ The parameter list can be obtained by executing the next command:
     >ros2 run ars548_driver radar_setup.cpp -h
 ```
 
+## Citation
+
+If you find this driver useful for your research, please consider to add the following citation.
+
+```
+@article{FERNANDEZCALATAYUD2025102111,
+title = {ars548_ros: An ARS 548 RDI radar driver for ROS},
+journal = {SoftwareX},
+volume = {30},
+pages = {102111},
+year = {2025},
+issn = {2352-7110},
+doi = {https://doi.org/10.1016/j.softx.2025.102111},
+url = {https://www.sciencedirect.com/science/article/pii/S2352711025000780},
+author = {Fernando Fernández-Calatayud and Lucía Coto and David Alejo and José Javier Carpio and Fernando Caballero and Luis Merino},
+keywords = {ROS, Linux driver, Radar sensor, ARS 548},
+abstract = {The ARS 548 RDI Radar is a premium model of the fifth generation of 77 GHz long-range radar sensors with new RF antenna arrays, which offer digital beamforming. This radar measures independently the distance, speed, and angle of objects without any reflectors in one measurement cycle based on Pulse Compression with New Frequency Modulation. Unfortunately, to the best of our knowledge, there are no open-source drivers available for Linux systems to enable users to analyze the data acquired by the sensor. In this paper, we present a driver that can interpret the data from the ARS 548 RDI sensor and make it available over the Robot Operating System versions 1 and 2 (ROS and ROS2). Thus, these data can be stored, represented, and analyzed using the powerful tools offered by ROS. Besides, our driver offers advanced object features provided by the sensor, such as relative estimated velocity and acceleration of each object, its orientation and angular velocity. We focus on the configuration of the sensor and the use of our driver including its filtering and representation tools. Besides, we offer a video tutorial to help in its configuration process. Finally, a dataset acquired with this sensor and an Ouster OS1-32 LiDAR sensor, to have baseline measurements, is available so that the user can check the correctness of our driver.}
+}
+```
+
 ## Acknowledgements
 
 ![Logos](minci.png)
