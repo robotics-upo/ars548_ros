@@ -15,6 +15,7 @@
 #include "tclap/CmdLine.h"
 #include "ars548_driver/ars548_driver.hpp"
 #include "ars548_driver/ars548_data.h"
+#include <stdfloat>
 
 #define RADAR_INTERFACE "10.13.1.166"
 #define CONFIGURATION_SOURCE_PORT 42401
@@ -22,6 +23,7 @@
 
 #define NEW_IP "0.0.0.0"
 #define RADAR_IP "10.13.1.113"
+
 
 int main(int argc,char* argv[]){
     int fdr,fds;//One to receive the data of the radar, the other to send the data to it
@@ -123,17 +125,17 @@ int main(int argc,char* argv[]){
     
    
     //To configure the radar possition and orientation in the vehicle
-    TCLAP::ValueArg<_Float32>new_x_pos("X","NewXPos","New Longitudinal possition of the radar (-100,100)",false,s.Longitudinal,"float");
-    TCLAP::ValueArg<_Float32>new_y_pos("Y","NewYPos","New Lateral possition of the radar (-100,100)",false,s.Lateral,"float");
-    TCLAP::ValueArg<_Float32>new_z_pos("Z","NewZPos","New Vertical possition of the radar (0.01,10)",false,s.Vertical,"float");
-    TCLAP::ValueArg<_Float32>new_yaw("y","NewYaw","New yaw for the radar (-3.14159,3.14159)",false,s.Yaw,"float");
-    TCLAP::ValueArg<_Float32>new_pitch("P","NewPitch","New pitch for the radar (-1.5707,1.5707)",false,s.Pitch,"float");
+    TCLAP::ValueArg<std::float_t>new_x_pos("X","NewXPos","New Longitudinal possition of the radar (-100,100)",false,s.Longitudinal,"float");
+    TCLAP::ValueArg<std::float_t>new_y_pos("Y","NewYPos","New Lateral possition of the radar (-100,100)",false,s.Lateral,"float");
+    TCLAP::ValueArg<float_t>new_z_pos("Z","NewZPos","New Vertical possition of the radar (0.01,10)",false,s.Vertical,"float");
+    TCLAP::ValueArg<float_t>new_yaw("y","NewYaw","New yaw for the radar (-3.14159,3.14159)",false,s.Yaw,"float");
+    TCLAP::ValueArg<float_t>new_pitch("P","NewPitch","New pitch for the radar (-1.5707,1.5707)",false,s.Pitch,"float");
     TCLAP::ValueArg<std::uint8_t>new_plug_otientation("p","NewPlugOr","New plug orientation for the radar(0=RIGHT,1=LEFT)",false,s.PlugOrientation,"uint8_t");
     //To configure the characteristics of the vehicle the radar is possitioned
-    TCLAP::ValueArg<_Float32>new_vehicle_Length("L","NewLength","New vehicle length (0.01,100)",false,s.Length,"float");
-    TCLAP::ValueArg<_Float32>new_vehicle_Width("W","NewWidth","New vehicle width (0.01,100)",false,s.Width,"float");
-    TCLAP::ValueArg<_Float32>new_vehicle_Height("H","NewHeight","New vehicle height (0.01,100)",false,s.Height,"float");
-    TCLAP::ValueArg<_Float32>new_vehicle_Wheelbase("w","NewWheelLength","New vehicle wheelbase (0.01,100)",false,s.Wheelbase,"float");
+    TCLAP::ValueArg<float_t>new_vehicle_Length("L","NewLength","New vehicle length (0.01,100)",false,s.Length,"float");
+    TCLAP::ValueArg<float_t>new_vehicle_Width("W","NewWidth","New vehicle width (0.01,100)",false,s.Width,"float");
+    TCLAP::ValueArg<float_t>new_vehicle_Height("H","NewHeight","New vehicle height (0.01,100)",false,s.Height,"float");
+    TCLAP::ValueArg<float_t>new_vehicle_Wheelbase("w","NewWheelLength","New vehicle wheelbase (0.01,100)",false,s.Wheelbase,"float");
     //To configure the radar parameters
     TCLAP::ValueArg<std::uint16_t>max_dist("D","maxDist","New max distance for the radar (93,1514)",false,s.MaximumDistance,"uint16_t");
     TCLAP::ValueArg<std::uint8_t>new_frequency_slot("F","NewFreq","New Frequency Slot for the radar (0=Low,1=Mid,2=High)",false,s.FrequencySlot,"uint8_t");
@@ -176,7 +178,7 @@ int main(int argc,char* argv[]){
     //Radar possition.
     if (connected)
     {
-        c.Longitudinal=new_x_pos.getValue();
+        c.Longitudinal = new_x_pos.getValue();
         c.Lateral=new_y_pos.getValue();
         c.Vertical=new_z_pos.getValue();
         c.Yaw=new_yaw.getValue();
