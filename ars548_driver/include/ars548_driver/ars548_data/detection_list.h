@@ -55,10 +55,10 @@ struct DetectionList{
 
     inline void changeEndianness();
 
-    inline ars548_messages::msg::DetectionList toMsg(const std::string &frame_ID, bool override_stamp = true);
+    inline ars548_messages::msg::DetectionList toMsg(const std::string &frame_ID, const rclcpp::Time &now, bool override_stamp = true);
 
     inline void fillDetectionCloud(sensor_msgs::msg::PointCloud2 &cloud_msg, sensor_msgs::PointCloud2Modifier &modifierDetection,
-                                  const std::string &frame_id, bool override_stamp = true);
+                                  const std::string &frame_id, const rclcpp::Time &now, bool override_stamp = true);
 };
 
 /**
@@ -66,7 +66,7 @@ struct DetectionList{
      * 
      * @return DetectionList The modified struct.
 */
-void DetectionList::changeEndianness() {
+inline void DetectionList::changeEndianness() {
     ServiceID = byteswap(ServiceID);
     MethodID = byteswap(MethodID);
     PayloadLength = byteswap(PayloadLength);
@@ -103,13 +103,12 @@ void DetectionList::changeEndianness() {
 
 #pragma pack(4)
 
-inline ars548_messages::msg::DetectionList DetectionList::toMsg(const std::string &frame_ID, bool override_stamp) {
+inline ars548_messages::msg::DetectionList DetectionList::toMsg(const std::string &frame_ID, const rclcpp::Time &now, bool override_stamp) {
     ars548_messages::msg::DetectionList detectionMessage;
 
     detectionMessage.header.frame_id = frame_ID;
     if (override_stamp) {
-        rclcpp::Clock clock;
-        detectionMessage.header.stamp = clock.now();
+        detectionMessage.header.stamp = now;
     } else {
         detectionMessage.header.stamp.sec = Timestamp_Seconds;
         detectionMessage.header.stamp.nanosec = Timestamp_Nanoseconds;
@@ -157,13 +156,15 @@ inline ars548_messages::msg::DetectionList DetectionList::toMsg(const std::strin
  */
 #define DETECTION_LIST_POINTCLOUD_HEIGHT 1
 inline void DetectionList::fillDetectionCloud(sensor_msgs::msg::PointCloud2 &cloud_msg, sensor_msgs::PointCloud2Modifier &modifierDetection, 
-                                           const std::string &frame_id, bool override_stamp) {
+                                           const std::string &frame_id, const rclcpp::Time &now, bool override_stamp) {
     cloud_msg.header=std_msgs::msg::Header();
     cloud_msg.header.frame_id = frame_id;
     modifierDetection.resize(static_cast<size_t>(List_NumOfDetections));
     if (override_stamp) {
-        rclcpp::Clock clock;
-        cloud_msg.header.stamp = clock.now();
+        cloud_msg.header.stamp = now;
+    } else {
+        cloud_msg.header.stamp.sec = Timestamp_Seconds;
+        cloud_msg.header.stamp.nanosec = Timestamp_Nanoseconds;
     }
     cloud_msg.is_dense=false;
     cloud_msg.is_bigendian=false;
@@ -184,7 +185,7 @@ inline void DetectionList::fillDetectionCloud(sensor_msgs::msg::PointCloud2 &clo
         auto posX = List_Detections[i].f_Range*float(std::cos(List_Detections[i].f_ElevationAngle))*float(std::cos(List_Detections[i].f_AzimuthAngle));
         auto posY = List_Detections[i].f_Range*float(std::cos(List_Detections[i].f_ElevationAngle))*float(std::sin(List_Detections[i].f_AzimuthAngle));
         auto posZ = List_Detections[i].f_Range*float(std::sin(List_Detections[i].f_ElevationAngle));
-        RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"),"Detection possition \n x: %f\n y: %f\n z:%f.", posX, posY, posZ);
+        RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"),"Detection position \n x: %f\n y: %f\n z:%f.", posX, posY, posZ);
         *iter_xD = posX;
         *iter_yD = posY;
         *iter_zD = posZ;
