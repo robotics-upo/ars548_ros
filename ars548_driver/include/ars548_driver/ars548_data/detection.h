@@ -28,7 +28,7 @@ struct Detection{
     inline ars548_messages::msg::Detection toMsg();
 };
 
-void Detection::changeEndianness() {
+inline void Detection::changeEndianness() {
     f_AzimuthAngle = byteswap(f_AzimuthAngle);
     f_AzimuthAngleSTD = byteswap(f_AzimuthAngleSTD);
     f_ElevationAngle = byteswap(f_ElevationAngle);
