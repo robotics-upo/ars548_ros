@@ -76,7 +76,7 @@ struct Object{
 
 #pragma pack(4)
 
-void Object::changeEndianness() {
+inline void Object::changeEndianness() {
     u_StatusSensor = byteswap(u_StatusSensor);
     u_ID = byteswap(u_ID);
     u_Age = byteswap(u_Age);
@@ -107,7 +107,10 @@ void Object::changeEndianness() {
     f_Dynamics_AbsAccel_Y = byteswap(f_Dynamics_AbsAccel_Y);
     f_Dynamics_AbsAccel_Y_STD = byteswap(f_Dynamics_AbsAccel_Y_STD);
     f_Dynamics_AbsAccel_CovarianceXY = byteswap(f_Dynamics_AbsAccel_CovarianceXY);
-    f_Dynamics_RelAccel_X = byteswap(f_Dynamics_RelAccel_Y_STD);
+    f_Dynamics_RelAccel_X = byteswap(f_Dynamics_RelAccel_X);
+    f_Dynamics_RelAccel_X_STD = byteswap(f_Dynamics_RelAccel_X_STD);
+    f_Dynamics_RelAccel_Y = byteswap(f_Dynamics_RelAccel_Y);
+    f_Dynamics_RelAccel_Y_STD = byteswap(f_Dynamics_RelAccel_Y_STD);
     f_Dynamics_RelAccel_CovarianceXY = byteswap(f_Dynamics_RelAccel_CovarianceXY);
     u_Dynamics_Orientation_Rate_Mean = byteswap(u_Dynamics_Orientation_Rate_Mean);
     u_Dynamics_Orientation_Rate_STD = byteswap(u_Dynamics_Orientation_Rate_STD);
@@ -119,7 +122,7 @@ void Object::changeEndianness() {
     u_Shape_Width_Edge_STD = byteswap(u_Shape_Width_Edge_STD);
 }
 
-ars548_messages::msg::Object Object::toMsg() {
+inline ars548_messages::msg::Object Object::toMsg() {
     ars548_messages::msg::Object o;
 
     o.u_statussensor = u_StatusSensor;
@@ -151,7 +154,7 @@ ars548_messages::msg::Object Object::toMsg() {
     o.u_shape_length_status = u_Shape_Length_Status;
     o.u_shape_width_edge_invalidflags = u_Shape_Width_Edge_InvalidFlags;
     o.u_shape_width_edge_mean = u_Shape_Width_Edge_Mean;
-    o.u_shape_width_edge_std = u_Shape_Length_Edge_STD;
+    o.u_shape_width_edge_std = u_Shape_Width_Edge_STD;
     o.u_shape_width_status = u_Shape_Width_Status;
     o.u_statusmeasurement = u_StatusMeasurement;
     o.u_statusmovement = u_StatusMovement;
@@ -165,7 +168,7 @@ ars548_messages::msg::Object Object::toMsg() {
     o.u_classification_pedestrian = u_Classification_Pedestrian;
     o.u_classification_truck = u_Classification_Truck;
     o.u_classification_underdrivable = u_Classification_Underdrivable;
-    o.u_classification_unknown = u_Position_CovarianceXY;
+    o.u_classification_unknown = u_Classification_Unknown;
     o.f_dynamics_absaccel_covariancexy = f_Dynamics_AbsAccel_CovarianceXY;
     o.f_dynamics_absaccel_x = f_Dynamics_AbsAccel_X;
     o.f_dynamics_absaccel_x_std = f_Dynamics_AbsAccel_X_STD;
