@@ -39,15 +39,15 @@ struct ObjectList{
 
     inline void changeEndianness();
 
-    inline ars548_messages::msg::ObjectList toMsg(const std::string &frame_ID, bool override_stamp = true);
+    inline ars548_messages::msg::ObjectList toMsg(const std::string &frame_ID, const rclcpp::Time &now, bool override_stamp = true);
 
     inline void fillObjectCloud(sensor_msgs::msg::PointCloud2 &cloud_msg, sensor_msgs::PointCloud2Modifier &modifierObject,
-                                  const std::string &frame_id, bool override_stamp = true);
+                                  const std::string &frame_id, const rclcpp::Time &now, bool override_stamp = true);
 
-    geometry_msgs::msg::PoseArray getDirectionMessage(const std::string &frame_id, bool override_stamp = true);
+    inline geometry_msgs::msg::PoseArray getDirectionMessage(const std::string &frame_id, const rclcpp::Time &now, bool override_stamp = true);
 };
 
-void ObjectList::changeEndianness() {
+inline void ObjectList::changeEndianness() {
     ServiceID = byteswap(ServiceID);
     MethodID = byteswap(MethodID);
     PayloadLength = byteswap(PayloadLength);
@@ -69,7 +69,7 @@ void ObjectList::changeEndianness() {
 
 #pragma pack(4)
 
-inline ars548_messages::msg::ObjectList ObjectList::toMsg(const std::string &frame_ID, bool override_stamp) {
+inline ars548_messages::msg::ObjectList ObjectList::toMsg(const std::string &frame_ID, const rclcpp::Time &now, bool override_stamp) {
     ars548_messages::msg::ObjectList objectMessage;
 
     objectMessage.crc = CRC;
@@ -95,8 +95,7 @@ inline ars548_messages::msg::ObjectList ObjectList::toMsg(const std::string &fra
     
     objectMessage.header.frame_id = frame_ID;
     if (override_stamp) {
-        rclcpp::Clock clock;
-        objectMessage.header.stamp = clock.now();
+        objectMessage.header.stamp = now;
     } else {
         objectMessage.header.stamp.sec = Timestamp_Seconds;
         objectMessage.header.stamp.nanosec = Timestamp_Nanoseconds;
@@ -107,12 +106,11 @@ inline ars548_messages::msg::ObjectList ObjectList::toMsg(const std::string &fra
 }
 
 inline void ObjectList::fillObjectCloud(sensor_msgs::msg::PointCloud2 &cloud_msg, sensor_msgs::PointCloud2Modifier &modifierObject,
-                            const std::string &frame_id, bool override_stamp) {
+                            const std::string &frame_id, const rclcpp::Time &now, bool override_stamp) {
     
     cloud_msg.header.frame_id = frame_id;
     if (override_stamp) {
-        rclcpp::Clock clock;
-        cloud_msg.header.stamp = clock.now();
+        cloud_msg.header.stamp = now;
     } else {
         cloud_msg.header.stamp.sec = Timestamp_Seconds;
         cloud_msg.header.stamp.nanosec = Timestamp_Nanoseconds;
@@ -149,15 +147,14 @@ inline void ObjectList::fillObjectCloud(sensor_msgs::msg::PointCloud2 &cloud_msg
 
 }
 
-geometry_msgs::msg::PoseArray ObjectList::getDirectionMessage(const std::string &frame_id, bool override_stamp){
+inline geometry_msgs::msg::PoseArray ObjectList::getDirectionMessage(const std::string &frame_id, const rclcpp::Time &now, bool override_stamp){
     geometry_msgs::msg::PoseArray cloud_Direction;
     tf2::Quaternion q;
     float yaw;
     cloud_Direction.header = std_msgs::msg::Header();
     cloud_Direction.header.frame_id = frame_id;
     if (override_stamp) {
-        rclcpp::Clock clock;
-        cloud_Direction.header.stamp = clock.now();
+        cloud_Direction.header.stamp = now;
     } else {
         cloud_Direction.header.stamp.sec = Timestamp_Seconds;
         cloud_Direction.header.stamp.nanosec = Timestamp_Nanoseconds;
