@@ -9,6 +9,8 @@
         <param name="radarIP" value="$(var radarIP)"/>
         <param name="radarPort" value="$(var radarPort)"/>
         <param name="frameID" value="$(var frameID_Radar)"/>
+        <param name="localIP" value="$(var localIP)"/>
+        <param name="multicastIP" value="$(var multicastIP)"/>
     </node>
     
     <node if="$(var viz)" pkg="rviz2" exec="rviz2" name="Visualization" 
