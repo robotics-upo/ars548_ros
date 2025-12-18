@@ -117,7 +117,7 @@ inline ars548_messages::msg::Status UDPStatus::toMsg() {
     statusMessage.maximumdistance = MaximumDistance;
     statusMessage.pitch = Pitch;
     statusMessage.plugorientation = PlugOrientation;
-    statusMessage.powersave_standstill = PayloadLength;
+    statusMessage.powersave_standstill = Powersave_Standstill;
     statusMessage.sensoripaddress_0 = SensorIPAddress_0;
     statusMessage.sensoripaddress_1 = SensorIPAddress_1;
     statusMessage.status_blockagestatus = Status_BlockageStatus;
