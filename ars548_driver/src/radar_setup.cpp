@@ -40,7 +40,6 @@ int main(int argc,char* argv[]){
     TCLAP::ValueArg<std::string> arg_radar_ip("r", "radar_ip", "Radar IP", false, DEFAULT_RADAR_IP, "string");
     TCLAP::ValueArg<std::string> arg_multicast_ip("m", "multicast_ip", "Multicast IP", false, "224.0.2.2", "string");
 
-<<<<<<< HEAD
     //To configure the radar position and orientation in the vehicle
     TCLAP::ValueArg<float>new_x_pos("X","NewXPos","New Longitudinal position of the radar (-100,100)",false,0.0,"float");
     TCLAP::ValueArg<float>new_y_pos("Y","NewYPos","New Lateral position of the radar (-100,100)",false,0.0,"float");
@@ -53,81 +52,6 @@ int main(int argc,char* argv[]){
     TCLAP::ValueArg<float>new_vehicle_Width("W","NewWidth","New vehicle width (0.01,100)",false,0.0,"float");
     TCLAP::ValueArg<float>new_vehicle_Height("H","NewHeight","New vehicle height (0.01,100)",false,0.0,"float");
     TCLAP::ValueArg<float>new_vehicle_Wheelbase("w","NewWheelLength","New vehicle wheelbase (0.01,100)",false,0.0,"float");
-=======
-    // use setsockopt() to request that the kernel join a multicast group
-    //
-    struct ip_mreq mreq;
-    mreq.imr_multiaddr.s_addr = inet_addr(ARS548_MULTICAST_IP);
-    mreq.imr_interface.s_addr = inet_addr(RADAR_INTERFACE);
-    bool connected=true;
-    if (
-        setsockopt(
-            fdr, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*) &mreq, sizeof(mreq)
-        ) < 0
-    ){
-        perror("setsockopt");
-        connected=false;
-    }
-    unsigned int addrlenR = sizeof(addrR);
-    struct UDPStatus s;
-    int iterator=0;
-    if(connected){
-        nbytes = recvfrom(
-        fdr,
-        msgbuf,
-        MSGBUFSIZE,
-        0,
-        (struct sockaddr *) &addrR,
-        &addrlenR
-        );
-        if(nbytes<0)
-        {
-            perror("Failed attempt of getting data");
-            return 1;
-        }
-        
-        
-        
-        while (!s.receiveStatusMsg(nbytes,msgbuf))
-        {
-            
-            nbytes = recvfrom(
-            fdr,
-            msgbuf,
-            MSGBUFSIZE,
-            0,
-            (struct sockaddr *) &addrR,
-            &addrlenR
-            );
-            if(nbytes<0)
-            {
-                perror("Failed attempt of getting data");
-                return 1;
-            }
-            if (iterator>=6)
-            {
-                perror("Could not receive the status data");
-                return 1;
-            }
-            s = *((struct UDPStatus*)msgbuf);
-            iterator++;
-        }        
-    }
-    
-   
-    //To configure the radar possition and orientation in the vehicle
-    TCLAP::ValueArg<std::float_t>new_x_pos("X","NewXPos","New Longitudinal possition of the radar (-100,100)",false,s.Longitudinal,"float");
-    TCLAP::ValueArg<std::float_t>new_y_pos("Y","NewYPos","New Lateral possition of the radar (-100,100)",false,s.Lateral,"float");
-    TCLAP::ValueArg<float_t>new_z_pos("Z","NewZPos","New Vertical possition of the radar (0.01,10)",false,s.Vertical,"float");
-    TCLAP::ValueArg<float_t>new_yaw("y","NewYaw","New yaw for the radar (-3.14159,3.14159)",false,s.Yaw,"float");
-    TCLAP::ValueArg<float_t>new_pitch("P","NewPitch","New pitch for the radar (-1.5707,1.5707)",false,s.Pitch,"float");
-    TCLAP::ValueArg<std::uint8_t>new_plug_otientation("p","NewPlugOr","New plug orientation for the radar(0=RIGHT,1=LEFT)",false,s.PlugOrientation,"uint8_t");
-    //To configure the characteristics of the vehicle the radar is possitioned
-    TCLAP::ValueArg<float_t>new_vehicle_Length("L","NewLength","New vehicle length (0.01,100)",false,s.Length,"float");
-    TCLAP::ValueArg<float_t>new_vehicle_Width("W","NewWidth","New vehicle width (0.01,100)",false,s.Width,"float");
-    TCLAP::ValueArg<float_t>new_vehicle_Height("H","NewHeight","New vehicle height (0.01,100)",false,s.Height,"float");
-    TCLAP::ValueArg<float_t>new_vehicle_Wheelbase("w","NewWheelLength","New vehicle wheelbase (0.01,100)",false,s.Wheelbase,"float");
->>>>>>> f06e993efd86ed21c6110b584c673aef79de8fdc
     //To configure the radar parameters
     TCLAP::ValueArg<std::uint16_t>max_dist("D","maxDist","New max distance for the radar (93,1514)",false,0,"uint16_t");
     TCLAP::ValueArg<std::uint8_t>new_frequency_slot("F","NewFreq","New Frequency Slot for the radar (0=Low,1=Mid,2=High)",false,0,"uint8_t");
@@ -255,21 +179,12 @@ int main(int argc,char* argv[]){
     
     if (connected)
     {
-<<<<<<< HEAD
         c.Longitudinal = new_x_pos.isSet() ? new_x_pos.getValue() : s.Longitudinal;
         c.Lateral = new_y_pos.isSet() ? new_y_pos.getValue() : s.Lateral;
         c.Vertical = new_z_pos.isSet() ? new_z_pos.getValue() : s.Vertical;
         c.Yaw = new_yaw.isSet() ? new_yaw.getValue() : s.Yaw;
         c.Pitch = new_pitch.isSet() ? new_pitch.getValue() : s.Pitch;
         c.PlugOrientation = new_plug_orientation.isSet() ? new_plug_orientation.getValue() : s.PlugOrientation;
-=======
-        c.Longitudinal = new_x_pos.getValue();
-        c.Lateral=new_y_pos.getValue();
-        c.Vertical=new_z_pos.getValue();
-        c.Yaw=new_yaw.getValue();
-        c.Pitch=new_pitch.getValue();
-        c.PlugOrientation=new_plug_otientation.getValue();
->>>>>>> f06e993efd86ed21c6110b584c673aef79de8fdc
 
         c.Length = new_vehicle_Length.isSet() ? new_vehicle_Length.getValue() : s.Length;
         c.Width = new_vehicle_Width.isSet() ? new_vehicle_Width.getValue() : s.Width;
