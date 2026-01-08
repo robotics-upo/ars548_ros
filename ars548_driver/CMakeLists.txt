@@ -6,7 +6,8 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-set (CMAKE_CXX_STANDARD_REQUIRED 23)
+set (CMAKE_CXX_STANDARD 23)
+set (CMAKE_CXX_STANDARD_REQUIRED ON)
 set (CMAKE_BUILD_TYPE Release)
 # find dependencies
 find_package(ament_cmake REQUIRED)
@@ -17,7 +18,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 include_directories(include)
 
-add_executable(ars548_driver src/ars548_driver_node.cpp)
+add_executable(ars548_driver src/ars548_driver_node.cpp src/ars548_driver.cpp)
 ament_target_dependencies(ars548_driver rclcpp ars548_messages sensor_msgs tf2_geometry_msgs)
 
 add_executable(ars548_filter_node src/ars548_filter_node.cpp)
