@@ -116,7 +116,7 @@ class ARS548Driver{
         status.Width=ChangeEndianness(status.Width);
         status.Height=ChangeEndianness(status.Height);
         status.Wheelbase=ChangeEndianness(status.Wheelbase);
-        status.MaximunDistance=ChangeEndianness(status.MaximunDistance);
+        status.MaximumDistance=ChangeEndianness(status.MaximumDistance);
         status.SensorIPAddress_0=ChangeEndianness(status.SensorIPAddress_0);
         status.SensorIPAddress_1=ChangeEndianness(status.SensorIPAddress_1);
         return status;
@@ -170,7 +170,10 @@ class ARS548Driver{
             object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_Y=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_Y);
             object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_Y_STD=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_Y_STD);
             object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_CovarianceXY=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_CovarianceXY);
-            object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_X=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_Y_STD);
+            object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_X=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_X);
+            object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_Y=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_Y);
+            object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_X_STD=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_X_STD);
+            object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_Y_STD=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_Y_STD);
             object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_CovarianceXY=ChangeEndianness(object_List.ObjectList_Objects[i].f_Dynamics_RelAccel_CovarianceXY);
             object_List.ObjectList_Objects[i].u_Dynamics_Orientation_Rate_Mean=ChangeEndianness(object_List.ObjectList_Objects[i].u_Dynamics_Orientation_Rate_Mean);
             object_List.ObjectList_Objects[i].u_Dynamics_Orientation_Rate_STD=ChangeEndianness(object_List.ObjectList_Objects[i].u_Dynamics_Orientation_Rate_STD);
@@ -247,10 +250,10 @@ class ARS548Driver{
         statusMessage.lateral=status.Lateral;
         statusMessage.length=status.Length;
         statusMessage.longitudinal=status.Longitudinal;
-        statusMessage.maximundistance=status.MaximunDistance;
+        statusMessage.maximumdistance=status.MaximumDistance;
         statusMessage.pitch=status.Pitch;
         statusMessage.plugorientation=status.PlugOrientation;
-        statusMessage.powersave_standstill=status.PayloadLength;
+        statusMessage.powersave_standstill=status.Powersave_Standstill;
         statusMessage.sensoripaddress_0=status.SensorIPAddress_0;
         statusMessage.sensoripaddress_1=status.SensorIPAddress_1;
         statusMessage.status_blockagestatus=status.Status_BlockageStatus;
@@ -328,7 +331,7 @@ class ARS548Driver{
             objectMessage.objectlist_objects[i].u_shape_length_status=object_List.ObjectList_Objects[i].u_Shape_Length_Status;
             objectMessage.objectlist_objects[i].u_shape_width_edge_invalidflags=object_List.ObjectList_Objects[i].u_Shape_Width_Edge_InvalidFlags;
             objectMessage.objectlist_objects[i].u_shape_width_edge_mean=object_List.ObjectList_Objects[i].u_Shape_Width_Edge_Mean;
-            objectMessage.objectlist_objects[i].u_shape_width_edge_std=object_List.ObjectList_Objects[i].u_Shape_Length_Edge_STD;
+            objectMessage.objectlist_objects[i].u_shape_width_edge_std=object_List.ObjectList_Objects[i].u_Shape_Width_Edge_STD;
             objectMessage.objectlist_objects[i].u_shape_width_status=object_List.ObjectList_Objects[i].u_Shape_Width_Status;
             objectMessage.objectlist_objects[i].u_statusmeasurement=object_List.ObjectList_Objects[i].u_StatusMeasurement;
             objectMessage.objectlist_objects[i].u_statusmovement=object_List.ObjectList_Objects[i].u_StatusMovement;
@@ -342,7 +345,7 @@ class ARS548Driver{
             objectMessage.objectlist_objects[i].u_classification_pedestrian=object_List.ObjectList_Objects[i].u_Classification_Pedestrian;
             objectMessage.objectlist_objects[i].u_classification_truck=object_List.ObjectList_Objects[i].u_Classification_Truck;
             objectMessage.objectlist_objects[i].u_classification_underdrivable=object_List.ObjectList_Objects[i].u_Classification_Underdrivable;
-            objectMessage.objectlist_objects[i].u_classification_unknown=object_List.ObjectList_Objects[i].u_Position_CovarianceXY;
+            objectMessage.objectlist_objects[i].u_classification_unknown=object_List.ObjectList_Objects[i].u_Classification_Unknown;
             objectMessage.objectlist_objects[i].f_dynamics_absaccel_covariancexy=object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_CovarianceXY;
             objectMessage.objectlist_objects[i].f_dynamics_absaccel_x=object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_X;
             objectMessage.objectlist_objects[i].f_dynamics_absaccel_x_std=object_List.ObjectList_Objects[i].f_Dynamics_AbsAccel_X_STD;
@@ -516,7 +519,7 @@ class ARS548Driver{
         struct ip_mreq mreq;
         mreq.imr_multiaddr.s_addr = inet_addr(this->ars548_IP.c_str());
         mreq.imr_interface.s_addr = inet_addr(RADAR_INTERFACE);
-       
+
         if (
             setsockopt(
                 fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*) &mreq, sizeof(mreq)
@@ -525,41 +528,24 @@ class ARS548Driver{
             perror("setsockopt");
             return 1;
         }
-         unsigned int addrlen = sizeof(addr);
-        // now just enter a read-print loop
-        //
-        while (1)
+        unsigned int addrlen = sizeof(addr);
+
+        // FIX #6: use ros::ok() so the node stops cleanly on Ctrl+C / shutdown
+        while (ros::ok())
         {
-            
             nbytes = recvfrom(
-            fd,
-            msgbuf,
-            MSGBUFSIZE,
-            0,
-            (struct sockaddr *) &addr,
-            &addrlen
+                fd,
+                msgbuf,
+                MSGBUFSIZE,
+                0,
+                (struct sockaddr *) &addr,
+                &addrlen
             );
-            //Creation of the Point Cloud iterators.
-            //Detection Iterators
-            sensor_msgs::PointCloud2Iterator<float> iter_xD(cloud_msgDetect,"x");
-            sensor_msgs::PointCloud2Iterator<float> iter_yD(cloud_msgDetect,"y");
-            sensor_msgs::PointCloud2Iterator<float> iter_zD(cloud_msgDetect,"z");
-            sensor_msgs::PointCloud2Iterator<float> iter_vD(cloud_msgDetect,"v");
-            sensor_msgs::PointCloud2Iterator<float> iter_rD(cloud_msgDetect,"r");
-            sensor_msgs::PointCloud2Iterator<int8_t> iter_RCSD(cloud_msgDetect,"RCS");
-            sensor_msgs::PointCloud2Iterator<float> iter_azimuthD(cloud_msgDetect,"azimuth");
-            sensor_msgs::PointCloud2Iterator<float> iter_elevationD(cloud_msgDetect,"elevation");
-            //Object Iterators
-            sensor_msgs::PointCloud2Iterator<float> iter_x(cloud_msgObj,"x");
-            sensor_msgs::PointCloud2Iterator<float> iter_y(cloud_msgObj,"y");
-            sensor_msgs::PointCloud2Iterator<float> iter_z(cloud_msgObj,"z");
-            sensor_msgs::PointCloud2Iterator<float> iter_vx(cloud_msgObj,"vx");
-            sensor_msgs::PointCloud2Iterator<float> iter_vy(cloud_msgObj,"vy");
 
-
+            // FIX #6: continue on transient errors instead of killing the node
             if(nbytes<0){
-                perror("Failed attempt of getting data");
-                return 1;
+                perror("recvfrom failed");
+                continue;
             }
             switch (nbytes)
             {
@@ -575,78 +561,84 @@ class ARS548Driver{
                     statusPublisher.publish(statusMessage);
                 }
                 break;
-            case OBJECT_MESSAGE_PAYLOAD:
+            case OBJECT_MESSAGE_PAYLOAD: {
                 struct Object_List object_List;
                 object_List=*((struct Object_List *)msgbuf);
                 object_List.ServiceID=ChangeEndianness(object_List.ServiceID);
                 object_List.MethodID=ChangeEndianness(object_List.MethodID);
                 object_List.PayloadLength=ChangeEndianness(object_List.PayloadLength);
-                //Setting the ars548_messages
                 if(object_List.MethodID==OBJECT_MESSAGE_METHOD_ID && object_List.PayloadLength==OBJECT_MESSAGE_PDU_LENGTH){
-                     //Changes all of the > 8bit data to little endian
                         object_List=modifyObjectList(object_List);
                         modifierObject.resize(object_List.ObjectList_NumOfObjects);
                         cloud_Direction.poses.resize(object_List.ObjectList_NumOfObjects);
                         fillMessageObject(objectMessage,object_List);
-                        
-                        //Changes all of the > 8bit data to little endian inside the 50 element array
                         fillCloudMessage(cloud_msgObj);
+                        // FIX #7: iterators created HERE, after resize(), inside the correct case
+                        sensor_msgs::PointCloud2Iterator<float> iter_x(cloud_msgObj,"x");
+                        sensor_msgs::PointCloud2Iterator<float> iter_y(cloud_msgObj,"y");
+                        sensor_msgs::PointCloud2Iterator<float> iter_z(cloud_msgObj,"z");
+                        sensor_msgs::PointCloud2Iterator<float> iter_vx(cloud_msgObj,"vx");
+                        sensor_msgs::PointCloud2Iterator<float> iter_vy(cloud_msgObj,"vy");
                         for(u_int32_t i =0; i<object_List.ObjectList_NumOfObjects;++i,++iter_x,++iter_y,++iter_z,++iter_vx,++iter_vy){
-                           // AbsVel=3.6*sqrt(pow(object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_X,2)+pow(object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_Y,2));
                             *iter_x=object_List.ObjectList_Objects[i].u_Position_X;
                             *iter_y=object_List.ObjectList_Objects[i].u_Position_Y;
                             *iter_z=object_List.ObjectList_Objects[i].u_Position_Z;
                             *iter_vx=object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_X;
                             *iter_vy=object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_Y;
-                            //To show the direction of the moving object
                             fillDirectionMessage(cloud_Direction,object_List,i);
-                        } 
-
+                        }
                         pubObj.publish(cloud_msgObj);
                         directionPublisher.publish(cloud_Direction);
-                        objectPublisher.publish(objectMessage);   
+                        objectPublisher.publish(objectMessage);
                 }
                 break;
-            case DETECTION_MESSAGE_PAYLOAD:
-                float posX, posY,posZ;
-                
+            }
+            case DETECTION_MESSAGE_PAYLOAD: {
+                float posX, posY, posZ;
                 struct DetectionList detectionList;
                 detectionList=*((struct DetectionList *)msgbuf);
                 detectionList.ServiceID=ChangeEndianness(detectionList.ServiceID);
                 detectionList.MethodID=ChangeEndianness(detectionList.MethodID);
                 detectionList.PayloadLength=ChangeEndianness(detectionList.PayloadLength);
-                
-                fillCloudMessage(cloud_msgDetect);
-                
+
                 if(detectionList.MethodID==DETECTION_MESSAGE_METHOD_ID && detectionList.PayloadLength==DETECTION_MESSAGE_PDU_LENGTH){
                     detectionList=modifyDetectionList(detectionList);
-                    modifierDetection.resize(static_cast<size_t> (detectionList.List_NumOfDetections));
+                    modifierDetection.resize(static_cast<size_t>(detectionList.List_NumOfDetections));
                     fillDetectionMessage(detectionMessage,detectionList);
-                        
-                        //Changes all of the > 8bit data to little endian inside the 800 elements array
-                        for(uint64_t i = 0; i < detectionList.List_NumOfDetections;i++,++iter_xD,++iter_yD,++iter_zD,
-                                                                                   ++iter_vD, ++iter_rD, ++iter_RCSD,
-                                                                                   ++iter_azimuthD, ++iter_elevationD){
-                            posX = detectionList.List_Detections[i].f_Range*float(std::cos(detectionList.List_Detections[i].f_ElevationAngle))*float(std::cos(detectionList.List_Detections[i].f_AzimuthAngle));
-                            posY = detectionList.List_Detections[i].f_Range*float(std::cos(detectionList.List_Detections[i].f_ElevationAngle))*float(std::sin(detectionList.List_Detections[i].f_AzimuthAngle));
-                            posZ = detectionList.List_Detections[i].f_Range*float(std::sin(detectionList.List_Detections[i].f_ElevationAngle));
-                            *iter_xD = posX;
-                            *iter_yD = posY;
-                            *iter_zD = posZ;
-                            *iter_rD = detectionList.List_Detections[i].f_Range;
-                            *iter_vD = detectionList.List_Detections[i].f_RangeRate;
-                            *iter_RCSD = detectionList.List_Detections[i].s_RCS;
-                            *iter_azimuthD = detectionList.List_Detections[i].f_AzimuthAngle;
-                            *iter_elevationD = detectionList.List_Detections[i].f_ElevationAngle;
-
-                        }
-                        pubDetect.publish(cloud_msgDetect);
-                        detectionsPublisher.publish(detectionMessage);
-   
-                }             
+                    fillCloudMessage(cloud_msgDetect);
+                    // FIX #7: iterators created HERE, after resize(), inside the correct case
+                    sensor_msgs::PointCloud2Iterator<float> iter_xD(cloud_msgDetect,"x");
+                    sensor_msgs::PointCloud2Iterator<float> iter_yD(cloud_msgDetect,"y");
+                    sensor_msgs::PointCloud2Iterator<float> iter_zD(cloud_msgDetect,"z");
+                    sensor_msgs::PointCloud2Iterator<float> iter_vD(cloud_msgDetect,"v");
+                    sensor_msgs::PointCloud2Iterator<float> iter_rD(cloud_msgDetect,"r");
+                    sensor_msgs::PointCloud2Iterator<int8_t> iter_RCSD(cloud_msgDetect,"RCS");
+                    sensor_msgs::PointCloud2Iterator<float> iter_azimuthD(cloud_msgDetect,"azimuth");
+                    sensor_msgs::PointCloud2Iterator<float> iter_elevationD(cloud_msgDetect,"elevation");
+                    for(uint64_t i = 0; i < detectionList.List_NumOfDetections; i++,
+                            ++iter_xD, ++iter_yD, ++iter_zD,
+                            ++iter_vD, ++iter_rD, ++iter_RCSD,
+                            ++iter_azimuthD, ++iter_elevationD){
+                        posX = detectionList.List_Detections[i].f_Range*float(std::cos(detectionList.List_Detections[i].f_ElevationAngle))*float(std::cos(detectionList.List_Detections[i].f_AzimuthAngle));
+                        posY = detectionList.List_Detections[i].f_Range*float(std::cos(detectionList.List_Detections[i].f_ElevationAngle))*float(std::sin(detectionList.List_Detections[i].f_AzimuthAngle));
+                        posZ = detectionList.List_Detections[i].f_Range*float(std::sin(detectionList.List_Detections[i].f_ElevationAngle));
+                        *iter_xD = posX;
+                        *iter_yD = posY;
+                        *iter_zD = posZ;
+                        *iter_rD = detectionList.List_Detections[i].f_Range;
+                        *iter_vD = detectionList.List_Detections[i].f_RangeRate;
+                        *iter_RCSD = detectionList.List_Detections[i].s_RCS;
+                        *iter_azimuthD = detectionList.List_Detections[i].f_AzimuthAngle;
+                        *iter_elevationD = detectionList.List_Detections[i].f_ElevationAngle;
+                    }
+                    pubDetect.publish(cloud_msgDetect);
+                    detectionsPublisher.publish(detectionMessage);
+                }
                 break;
             }
+            }
         }
+        return 0;
     }
 
 
@@ -654,17 +646,16 @@ class ARS548Driver{
     std::string ars548_IP;
     std::string frame_ID;
     int ars548_Port;
-   
+
     /**
-     * @brief  ars548_driver Node. Used to try the driver. 
+     * @brief  ars548_driver Node.
      */
   ARS548Driver():modifierObject(cloud_msgObj),modifierDetection(cloud_msgDetect){
-    //Parameter declaration so the user can change them
     nh.reset(new ros::NodeHandle("~"));
 
-    nh->param("radarIP",ars548_IP, static_cast<std::string>(DEFAULT_RADAR_IP));
-    nh->param("radarPort", ars548_Port, DEFAULT_RADAR_PORT);
-    nh->param("frameID",frame_ID, static_cast<std::string>(DEFAULT_FRAME_ID));
+    nh->param("radarIP",        ars548_IP,       static_cast<std::string>(DEFAULT_RADAR_IP));
+    nh->param("radarPort",      ars548_Port,     DEFAULT_RADAR_PORT);
+    nh->param("frameID",        frame_ID,        static_cast<std::string>(DEFAULT_FRAME_ID));
 
     //Creation of their modifiers
 
