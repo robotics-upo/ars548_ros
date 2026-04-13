@@ -26,7 +26,7 @@ struct UDPStatus {
     float Width;
     float Height;
     float Wheelbase;
-    uint16_t MaximunDistance;
+    uint16_t MaximumDistance;
     uint8_t FrequencySlot;
     uint8_t CycleTime;
     uint8_t TimeSlot;
