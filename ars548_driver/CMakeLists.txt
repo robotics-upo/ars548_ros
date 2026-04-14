@@ -7,11 +7,6 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 set (CMAKE_BUILD_TYPE Debug)
 # find dependencies
-# find_package(roscpp REQUIRED)
-# find_package(ars548_messages REQUIRED)
-# find_package(sensor_msgs REQUIRED)
-# find_package(geometry_msgs REQUIRED)
-# find_package(tf2_geometry_msgs REQUIRED)
 
 find_package(
   catkin REQUIRED
@@ -39,12 +34,13 @@ add_dependencies(ars548_driver ${catkin_EXPORTED_TARGETS})
 target_link_libraries(ars548_driver ${catkin_LIBRARIES} )
 
 
-# TODO: driver filter
-#add_executable(ars548_driver_filter src/ars548_driver_filter.cpp)
-#add_dependencies(ars548_driver_filter roscpp sensor_msgs tf2 geometry_msgs) 
+add_executable(ars548_driver_filter src/ars548_driver_filter.cpp)
+add_dependencies(ars548_driver_filter ${catkin_EXPORTED_TARGETS})
+target_link_libraries(ars548_driver_filter ${catkin_LIBRARIES})
 
 install(TARGETS
   ars548_driver
+  ars548_driver_filter
   DESTINATION lib/${PROJECT_NAME}
 )
 
