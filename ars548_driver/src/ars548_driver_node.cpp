@@ -9,12 +9,8 @@ int main(int argc,char* argv[]){
 
   ARS548Driver driver;
 
-  ros::Rate loop_rate(100);
-
-  while (ros::ok()) {
-    ros::spinOnce();
-    loop_rate.sleep();
-  }
+  // Call the blocking read loop outside the constructor
+  driver.readData();
 
   return 0;
 }
