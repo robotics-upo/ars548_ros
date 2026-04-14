@@ -4,6 +4,8 @@
  * @brief ars548_driver is a class that is used to obtain all of the data from the sensor, translates it and sends it to the user for later use.
  * It also copies part of the received data and sends it to Rviz for the visualization of the results. 
  */
+#pragma once
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -13,6 +15,11 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <cmath>
+#include <memory>
+#include <string>
+
 #include <sensor_msgs/point_cloud2_iterator.h>
 #include <geometry_msgs/PoseArray.h>
 #include <tf/tf.h>
@@ -21,8 +28,6 @@
 #include "ars548_messages/DetectionList.h"
 #include "ars548_messages/ObjectList.h"
 #include "ars548_data.h"
-using namespace std::chrono_literals;
-
 /**
  * @brief Data obtained from the RadarSensors_Annex_AES548_IO SW 05.48.04.pdf 
  */
@@ -56,12 +61,13 @@ using namespace std::chrono_literals;
 class ARS548Driver{    
     
     private:
-    int methodID;
     char msgbuf[MSGBUFSIZE];
     int fd;
     int nbytes;
-    float AbsVel;
-    std::string answer;
+
+    std::string ars548_IP;
+    std::string frame_ID;
+    int ars548_Port;
 
   std::unique_ptr<ros::NodeHandle> nh;
     
@@ -127,7 +133,7 @@ class ARS548Driver{
      * @param object_List The Object_List struct that is going to be modified.
      * @return Object_List The modified Struct.
      */
-    Object_List modifyObjectList(Object_List object_List){
+    void modifyObjectList(Object_List& object_List){
         object_List.CRC=ChangeEndianness(object_List.CRC);
         object_List.Length=ChangeEndianness(object_List.Length);
         object_List.SQC=ChangeEndianness(object_List.SQC);
@@ -184,7 +190,6 @@ class ARS548Driver{
             object_List.ObjectList_Objects[i].u_Shape_Width_Edge_Mean=ChangeEndianness(object_List.ObjectList_Objects[i].u_Shape_Width_Edge_Mean);
             object_List.ObjectList_Objects[i].u_Shape_Width_Edge_STD=ChangeEndianness(object_List.ObjectList_Objects[i].u_Shape_Width_Edge_STD);
         }
-        return object_List;
     }
     /**
      * @brief Changes the endianness of the DetectionList struct.
@@ -192,7 +197,7 @@ class ARS548Driver{
      * @param detectionList The DetectionList struct that is going to be modified.
      * @return DetectionList The modified struct.
      */
-    DetectionList modifyDetectionList(DetectionList detectionList){
+    void modifyDetectionList(DetectionList& detectionList){
         detectionList.CRC=ChangeEndianness(detectionList.CRC);
         detectionList.Length=ChangeEndianness(detectionList.Length);
         detectionList.SQC=ChangeEndianness(detectionList.SQC);
@@ -232,7 +237,6 @@ class ARS548Driver{
             detectionList.List_Detections[i].u_ObjectID=ChangeEndianness(detectionList.List_Detections[i].u_ObjectID);
             detectionList.List_Detections[i].u_SortIndex=ChangeEndianness(detectionList.List_Detections[i].u_SortIndex);
         }
-        return detectionList;
     }
     /**
      * @brief Fills the Status Messsage.
@@ -450,7 +454,7 @@ class ARS548Driver{
      * @return PoseArray.msg. The message filled. 
      */
     void fillDirectionMessage(geometry_msgs::PoseArray &cloud_Direction,Object_List object_List,u_int32_t i){
-        tf2::Quaternion q;
+        tf::Quaternion q;
         float yaw;
         cloud_Direction.header = std_msgs::Header();
         cloud_Direction.header.frame_id=this->frame_ID;
@@ -465,6 +469,7 @@ class ARS548Driver{
         cloud_Direction.poses[i].orientation.z=q.z();
         cloud_Direction.poses[i].orientation.w=q.w();
     }
+    public:
     /**
      * @brief Reads the data received from the radar and sends it to the user and Rviz2.
      * 
@@ -511,6 +516,7 @@ class ARS548Driver{
         //
         if (bind(fd, (struct sockaddr*) &addr, sizeof(addr)) < 0) {
             perror("bind");
+            close(fd);
             return 1;
         }
 
@@ -526,6 +532,7 @@ class ARS548Driver{
             ) < 0
         ){
             perror("setsockopt");
+            close(fd);
             return 1;
         }
         unsigned int addrlen = sizeof(addr);
@@ -549,7 +556,7 @@ class ARS548Driver{
             }
             switch (nbytes)
             {
-            case STATUS_MESSAGE_PAYLOAD:
+            case STATUS_MESSAGE_PAYLOAD: {
                 struct UDPStatus status;
                 status = *((struct UDPStatus *)msgbuf);
                 status.ServiceID=ChangeEndianness(status.ServiceID);
@@ -561,6 +568,7 @@ class ARS548Driver{
                     statusPublisher.publish(statusMessage);
                 }
                 break;
+            }
             case OBJECT_MESSAGE_PAYLOAD: {
                 struct Object_List object_List;
                 object_List=*((struct Object_List *)msgbuf);
@@ -568,7 +576,7 @@ class ARS548Driver{
                 object_List.MethodID=ChangeEndianness(object_List.MethodID);
                 object_List.PayloadLength=ChangeEndianness(object_List.PayloadLength);
                 if(object_List.MethodID==OBJECT_MESSAGE_METHOD_ID && object_List.PayloadLength==OBJECT_MESSAGE_PDU_LENGTH){
-                        object_List=modifyObjectList(object_List);
+                        modifyObjectList(object_List);
                         modifierObject.resize(object_List.ObjectList_NumOfObjects);
                         cloud_Direction.poses.resize(object_List.ObjectList_NumOfObjects);
                         fillMessageObject(objectMessage,object_List);
@@ -602,11 +610,18 @@ class ARS548Driver{
                 detectionList.PayloadLength=ChangeEndianness(detectionList.PayloadLength);
 
                 if(detectionList.MethodID==DETECTION_MESSAGE_METHOD_ID && detectionList.PayloadLength==DETECTION_MESSAGE_PDU_LENGTH){
-                    detectionList=modifyDetectionList(detectionList);
-                    modifierDetection.resize(static_cast<size_t>(detectionList.List_NumOfDetections));
+                    modifyDetectionList(detectionList);
+                    int valid_detections = 0;
+                    for (uint64_t i = 0; i < detectionList.List_NumOfDetections; i++) {
+                        if (detectionList.List_Detections[i].u_InvalidFlags == 0) {
+                            valid_detections++;
+                        }
+                    }
+
+                    modifierDetection.resize(static_cast<size_t>(valid_detections));
                     fillDetectionMessage(detectionMessage,detectionList);
                     fillCloudMessage(cloud_msgDetect);
-                    // FIX #7: iterators created HERE, after resize(), inside the correct case
+                    
                     sensor_msgs::PointCloud2Iterator<float> iter_xD(cloud_msgDetect,"x");
                     sensor_msgs::PointCloud2Iterator<float> iter_yD(cloud_msgDetect,"y");
                     sensor_msgs::PointCloud2Iterator<float> iter_zD(cloud_msgDetect,"z");
@@ -615,21 +630,25 @@ class ARS548Driver{
                     sensor_msgs::PointCloud2Iterator<int8_t> iter_RCSD(cloud_msgDetect,"RCS");
                     sensor_msgs::PointCloud2Iterator<float> iter_azimuthD(cloud_msgDetect,"azimuth");
                     sensor_msgs::PointCloud2Iterator<float> iter_elevationD(cloud_msgDetect,"elevation");
-                    for(uint64_t i = 0; i < detectionList.List_NumOfDetections; i++,
-                            ++iter_xD, ++iter_yD, ++iter_zD,
-                            ++iter_vD, ++iter_rD, ++iter_RCSD,
-                            ++iter_azimuthD, ++iter_elevationD){
-                        posX = detectionList.List_Detections[i].f_Range*float(std::cos(detectionList.List_Detections[i].f_ElevationAngle))*float(std::cos(detectionList.List_Detections[i].f_AzimuthAngle));
-                        posY = detectionList.List_Detections[i].f_Range*float(std::cos(detectionList.List_Detections[i].f_ElevationAngle))*float(std::sin(detectionList.List_Detections[i].f_AzimuthAngle));
-                        posZ = detectionList.List_Detections[i].f_Range*float(std::sin(detectionList.List_Detections[i].f_ElevationAngle));
-                        *iter_xD = posX;
-                        *iter_yD = posY;
-                        *iter_zD = posZ;
-                        *iter_rD = detectionList.List_Detections[i].f_Range;
-                        *iter_vD = detectionList.List_Detections[i].f_RangeRate;
-                        *iter_RCSD = detectionList.List_Detections[i].s_RCS;
-                        *iter_azimuthD = detectionList.List_Detections[i].f_AzimuthAngle;
-                        *iter_elevationD = detectionList.List_Detections[i].f_ElevationAngle;
+                    
+                    for(uint64_t i = 0; i < detectionList.List_NumOfDetections; i++){
+                        if (detectionList.List_Detections[i].u_InvalidFlags == 0) {
+                            posX = detectionList.List_Detections[i].f_Range*float(std::cos(detectionList.List_Detections[i].f_ElevationAngle))*float(std::cos(detectionList.List_Detections[i].f_AzimuthAngle));
+                            posY = detectionList.List_Detections[i].f_Range*float(std::cos(detectionList.List_Detections[i].f_ElevationAngle))*float(std::sin(detectionList.List_Detections[i].f_AzimuthAngle));
+                            posZ = detectionList.List_Detections[i].f_Range*float(std::sin(detectionList.List_Detections[i].f_ElevationAngle));
+                            *iter_xD = posX;
+                            *iter_yD = posY;
+                            *iter_zD = posZ;
+                            *iter_rD = detectionList.List_Detections[i].f_Range;
+                            *iter_vD = detectionList.List_Detections[i].f_RangeRate;
+                            *iter_RCSD = detectionList.List_Detections[i].s_RCS;
+                            *iter_azimuthD = detectionList.List_Detections[i].f_AzimuthAngle;
+                            *iter_elevationD = detectionList.List_Detections[i].f_ElevationAngle;
+                            
+                            ++iter_xD; ++iter_yD; ++iter_zD;
+                            ++iter_vD; ++iter_rD; ++iter_RCSD;
+                            ++iter_azimuthD; ++iter_elevationD;
+                        }
                     }
                     pubDetect.publish(cloud_msgDetect);
                     detectionsPublisher.publish(detectionMessage);
@@ -641,11 +660,6 @@ class ARS548Driver{
         return 0;
     }
 
-
-    public:
-    std::string ars548_IP;
-    std::string frame_ID;
-    int ars548_Port;
 
     /**
      * @brief  ars548_driver Node.
@@ -685,8 +699,12 @@ class ARS548Driver{
     modifierDetection.reserve(SIZE);
     modifierDetection.clear();
     cloud_Direction.poses.reserve(SIZE);
-    //handler subscription to the three callbacks so we can see if they have been changed
-    readData();
+  }
+
+  ~ARS548Driver() {
+      if (fd >= 0) {
+          close(fd);
+      }
   }
     
 };
