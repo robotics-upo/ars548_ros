@@ -1,0 +1,22 @@
+<launch>
+    <arg name="minimum_velocity" default="0"/>
+    <arg name="frameID_Radar" default="ARS_548"/>
+    <arg name="frameID_Filter" default="ARS_548"/>
+    <arg name="radarIP" default="224.0.2.2"/>
+    <arg name="radarPort" default="42102"/>
+
+    <node pkg="ars548_driver" type="ars548_driver" name="radar">
+        <param name="radarIP" value="$(arg radarIP)"/>
+        <param name="radarPort" value="$(arg radarPort)"/>
+        <param name="frameID" value="$(arg frameID_Radar)"/>
+    </node>
+
+    <node pkg="ars548_driver" type="ars548_driver_filter" name="filtered">
+        <param name="minimum" value="$(arg minimum_velocity)"/>
+        <param name="frameID" value="$(arg frameID_Filter)"/>
+        <remap from="ObjectList" to="/radar/ObjectList"/>
+    </node>
+    
+    <node pkg="rviz" type="rviz" name="Visualization" args="-d $(find ars548_driver)/rviz/filter.rviz"/>
+    <node pkg="tf2_ros" type="static_transform_publisher" name="radar_tf" args="0 0 0 0 0 0 PointCloud ARS_548"/>
+</launch>
