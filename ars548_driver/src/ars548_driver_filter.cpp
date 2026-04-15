@@ -42,10 +42,11 @@ private:
     void fillDirectionMessage(geometry_msgs::PoseArray &cloud_Direction, const ars548_messages::ObjectList::ConstPtr& object_List, uint32_t i, int pos_index){
         tf::Quaternion q;
         float yaw;
-        cloud_Direction.poses[pos_index].position.x = double(object_List->objectlist_objects[i].u_position_x);
-        cloud_Direction.poses[pos_index].position.y = double(object_List->objectlist_objects[i].u_position_y);
-        cloud_Direction.poses[pos_index].position.z = double(object_List->objectlist_objects[i].u_position_z);
-        yaw = atan2(object_List->objectlist_objects[i].f_dynamics_relvel_y, object_List->objectlist_objects[i].f_dynamics_relvel_x);   
+        const auto& obj = object_List->objectlist_objects[i];
+        cloud_Direction.poses[pos_index].position.x = double(obj.u_position_x);
+        cloud_Direction.poses[pos_index].position.y = double(obj.u_position_y);
+        cloud_Direction.poses[pos_index].position.z = double(obj.u_position_z);
+        yaw = atan2(obj.f_dynamics_relvel_y, obj.f_dynamics_relvel_x);   
         q.setRPY(0,0,yaw);
         cloud_Direction.poses[pos_index].orientation.x = q.x();
         cloud_Direction.poses[pos_index].orientation.y = q.y();
@@ -79,17 +80,18 @@ private:
         
         for(uint32_t i = 0; i < msg->objectlist_numofobjects; i++)
         {
-            float vx = msg->objectlist_objects[i].f_dynamics_absvel_x;
-            float vy = msg->objectlist_objects[i].f_dynamics_absvel_y;
-            float velocity = std::sqrt(vx*vx + vy*vy);
+            const auto& obj = msg->objectlist_objects[i];
+            float vx = obj.f_dynamics_absvel_x;
+            float vy = obj.f_dynamics_absvel_y;
+            float velocity = vx*vx + vy*vy;
           
-            if (velocity >= min_velocity)
+            if (velocity >= min_velocity*min_velocity)
             {
-                *iter_x = msg->objectlist_objects[i].u_position_x;
-                *iter_y = msg->objectlist_objects[i].u_position_y;
-                *iter_z = msg->objectlist_objects[i].u_position_z;
-                *iter_vx = msg->objectlist_objects[i].f_dynamics_absvel_x;
-                *iter_vy = msg->objectlist_objects[i].f_dynamics_absvel_y;
+                *iter_x = obj.u_position_x;
+                *iter_y = obj.u_position_y;
+                *iter_z = obj.u_position_z;
+                *iter_vx = obj.f_dynamics_absvel_x;
+                *iter_vy = obj.f_dynamics_absvel_y;
                 
                 ++iter_vx;
                 ++iter_vy;

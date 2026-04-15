@@ -32,7 +32,7 @@
  * @brief Data obtained from the RadarSensors_Annex_AES548_IO SW 05.48.04.pdf 
  */
 #define DEFAULT_RADAR_IP "224.0.2.2"
-#define RADAR_INTERFACE "10.13.1.166"
+#define DEFAULT_RADAR_INTERFACE "10.13.1.166"
 #define DEFAULT_RADAR_PORT 42102
 #define DEFAULT_FRAME_ID "ARS_548" 
 #define MSGBUFSIZE 102400
@@ -68,6 +68,7 @@ class ARS548Driver{
     std::string ars548_IP;
     std::string frame_ID;
     int ars548_Port;
+    std::string radar_interface;
 
   std::unique_ptr<ros::NodeHandle> nh;
     
@@ -245,7 +246,7 @@ class ARS548Driver{
      * @param status The Status struct used to fill the message.
      * 
      */
-    void fillStatusMessage(ars548_messages::Status &statusMessage, UDPStatus status){
+    void fillStatusMessage(ars548_messages::Status &statusMessage, UDPStatus &status){
         statusMessage.cycletime=status.CycleTime;
         statusMessage.configurationcounter=status.ConfigurationCounter;
         statusMessage.frequencyslot=status.FrequencySlot;
@@ -291,7 +292,7 @@ class ARS548Driver{
      * @param clock The clock used to fill the timestamp of the message.
      * 
      */
-    void fillMessageObject(ars548_messages::ObjectList &objectMessage,Object_List object_List){
+    void fillMessageObject(ars548_messages::ObjectList &objectMessage,Object_List &object_List){
         objectMessage.crc=object_List.CRC;
         objectMessage.length=object_List.Length;
         objectMessage.sqc=object_List.SQC;
@@ -380,7 +381,7 @@ class ARS548Driver{
      * @param detectionList The DetectionList struct used to fill the message.
      * @param clock The clock used to fill the timestamp of the message.
      */
-    void fillDetectionMessage(ars548_messages::DetectionList &detectionMessage,DetectionList detectionList){
+    void fillDetectionMessage(ars548_messages::DetectionList &detectionMessage,DetectionList &detectionList){
         detectionMessage.header.frame_id=this->frame_ID;
         detectionMessage.header.stamp=ros::Time::now();
         detectionMessage.aln_status=detectionList.Aln_Status;
@@ -453,16 +454,17 @@ class ARS548Driver{
      * @param i The iterator used to fill the array of poses with the values of the points obtained from the struct.
      * @return PoseArray.msg. The message filled. 
      */
-    void fillDirectionMessage(geometry_msgs::PoseArray &cloud_Direction,Object_List object_List,u_int32_t i){
+    void fillDirectionMessage(geometry_msgs::PoseArray &cloud_Direction,Object_List &object_List,u_int32_t i){
         tf::Quaternion q;
         float yaw;
         cloud_Direction.header = std_msgs::Header();
         cloud_Direction.header.frame_id=this->frame_ID;
         cloud_Direction.header.stamp=ros::Time::now();
-        cloud_Direction.poses[i].position.x = double(object_List.ObjectList_Objects[i].u_Position_X);
-        cloud_Direction.poses[i].position.y = double(object_List.ObjectList_Objects[i].u_Position_Y);
-        cloud_Direction.poses[i].position.z = double(object_List.ObjectList_Objects[i].u_Position_Z);
-        yaw = atan2(object_List.ObjectList_Objects[i].f_Dynamics_RelVel_Y,object_List.ObjectList_Objects[i].f_Dynamics_RelVel_X);   
+        const auto& obj = object_List.ObjectList_Objects[i];
+        cloud_Direction.poses[i].position.x = double(obj.u_Position_X);
+        cloud_Direction.poses[i].position.y = double(obj.u_Position_Y);
+        cloud_Direction.poses[i].position.z = double(obj.u_Position_Z);
+        yaw = atan2(obj.f_Dynamics_RelVel_Y, obj.f_Dynamics_RelVel_X);   
         q.setRPY(0,0,yaw);
         cloud_Direction.poses[i].orientation.x=q.x();
         cloud_Direction.poses[i].orientation.y=q.y();
@@ -503,7 +505,7 @@ class ARS548Driver{
             ) < 0
         ){
             perror("Reusing ADDR failed");
-            return 1;
+            return 1;   
         }
 
         // set up destination address
@@ -524,7 +526,7 @@ class ARS548Driver{
         //
         struct ip_mreq mreq;
         mreq.imr_multiaddr.s_addr = inet_addr(this->ars548_IP.c_str());
-        mreq.imr_interface.s_addr = inet_addr(RADAR_INTERFACE);
+        mreq.imr_interface.s_addr = inet_addr(this->radar_interface.c_str());
 
         if (
             setsockopt(
@@ -588,11 +590,12 @@ class ARS548Driver{
                         sensor_msgs::PointCloud2Iterator<float> iter_vx(cloud_msgObj,"vx");
                         sensor_msgs::PointCloud2Iterator<float> iter_vy(cloud_msgObj,"vy");
                         for(u_int32_t i =0; i<object_List.ObjectList_NumOfObjects;++i,++iter_x,++iter_y,++iter_z,++iter_vx,++iter_vy){
-                            *iter_x=object_List.ObjectList_Objects[i].u_Position_X;
-                            *iter_y=object_List.ObjectList_Objects[i].u_Position_Y;
-                            *iter_z=object_List.ObjectList_Objects[i].u_Position_Z;
-                            *iter_vx=object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_X;
-                            *iter_vy=object_List.ObjectList_Objects[i].f_Dynamics_AbsVel_Y;
+                            const auto& obj = object_List.ObjectList_Objects[i];
+                            *iter_x=obj.u_Position_X;
+                            *iter_y=obj.u_Position_Y;
+                            *iter_z=obj.u_Position_Z;
+                            *iter_vx=obj.f_Dynamics_AbsVel_X;
+                            *iter_vy=obj.f_Dynamics_AbsVel_Y;
                             fillDirectionMessage(cloud_Direction,object_List,i);
                         }
                         pubObj.publish(cloud_msgObj);
@@ -632,18 +635,23 @@ class ARS548Driver{
                     sensor_msgs::PointCloud2Iterator<float> iter_elevationD(cloud_msgDetect,"elevation");
                     
                     for(uint64_t i = 0; i < detectionList.List_NumOfDetections; i++){
-                        if (detectionList.List_Detections[i].u_InvalidFlags == 0) {
-                            posX = detectionList.List_Detections[i].f_Range*float(std::cos(detectionList.List_Detections[i].f_ElevationAngle))*float(std::cos(detectionList.List_Detections[i].f_AzimuthAngle));
-                            posY = detectionList.List_Detections[i].f_Range*float(std::cos(detectionList.List_Detections[i].f_ElevationAngle))*float(std::sin(detectionList.List_Detections[i].f_AzimuthAngle));
-                            posZ = detectionList.List_Detections[i].f_Range*float(std::sin(detectionList.List_Detections[i].f_ElevationAngle));
+                        const auto& detection = detectionList.List_Detections[i];
+                        if (detection.u_InvalidFlags == 0) {
+                            float cos_elev = std::cos(detection.f_ElevationAngle);
+                            float sin_elev = std::sin(detection.f_ElevationAngle);
+                            float cos_azi = std::cos(detection.f_AzimuthAngle);
+                            float sin_azi = std::sin(detection.f_AzimuthAngle);
+                            posX = detection.f_Range*cos_elev*cos_azi;
+                            posY = detection.f_Range*cos_elev*sin_azi;
+                            posZ = detection.f_Range*sin_elev;
                             *iter_xD = posX;
                             *iter_yD = posY;
                             *iter_zD = posZ;
-                            *iter_rD = detectionList.List_Detections[i].f_Range;
-                            *iter_vD = detectionList.List_Detections[i].f_RangeRate;
-                            *iter_RCSD = detectionList.List_Detections[i].s_RCS;
-                            *iter_azimuthD = detectionList.List_Detections[i].f_AzimuthAngle;
-                            *iter_elevationD = detectionList.List_Detections[i].f_ElevationAngle;
+                            *iter_rD = detection.f_Range;
+                            *iter_vD = detection.f_RangeRate;
+                            *iter_RCSD = detection.s_RCS;
+                            *iter_azimuthD = detection.f_AzimuthAngle;
+                            *iter_elevationD = detection.f_ElevationAngle;
                             
                             ++iter_xD; ++iter_yD; ++iter_zD;
                             ++iter_vD; ++iter_rD; ++iter_RCSD;
@@ -670,6 +678,7 @@ class ARS548Driver{
     nh->param("radarIP",        ars548_IP,       static_cast<std::string>(DEFAULT_RADAR_IP));
     nh->param("radarPort",      ars548_Port,     DEFAULT_RADAR_PORT);
     nh->param("frameID",        frame_ID,        static_cast<std::string>(DEFAULT_FRAME_ID));
+    nh->param("radarInterface", radar_interface, static_cast<std::string>(DEFAULT_RADAR_INTERFACE));
 
     //Creation of their modifiers
 
