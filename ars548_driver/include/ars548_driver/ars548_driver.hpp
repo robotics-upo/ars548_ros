@@ -539,6 +539,14 @@ class ARS548Driver{
         }
         unsigned int addrlen = sizeof(addr);
 
+        // Timeout for recvfrom
+        struct timeval tv;
+        tv.tv_sec = 1;
+        tv.tv_usec = 0;
+        if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
+            perror("setsockopt SO_RCVTIMEO failed");
+        }
+
         // FIX #6: use ros::ok() so the node stops cleanly on Ctrl+C / shutdown
         while (ros::ok())
         {
@@ -553,6 +561,10 @@ class ARS548Driver{
 
             // FIX #6: continue on transient errors instead of killing the node
             if(nbytes<0){
+                // Timeout
+                if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                    continue;
+                }
                 perror("recvfrom failed");
                 continue;
             }
