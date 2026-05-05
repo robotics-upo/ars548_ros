@@ -78,6 +78,10 @@ class ARS548Driver{
 
     sensor_msgs::PointCloud2Modifier modifierObject;
     sensor_msgs::PointCloud2Modifier modifierDetection;
+
+    struct UDPStatus in_status;
+    struct Object_List in_object_List;
+    struct DetectionList in_detectionList;
     /**
      * @brief  Sends the data on socket fd to the address addr.
      * 
@@ -98,12 +102,29 @@ class ARS548Driver{
      */
     template<typename T>
     T ChangeEndianness(T v){
-        T r;
-        uint8_t *pv = (uint8_t *)&v, *pr = (uint8_t *)&r;
-        for (int i = 0;i <int(sizeof(T)); i++){
-            pr[i]=pv[sizeof(T)-1-i];
+        T res = v;
+        if (sizeof(T) == 2) {
+            uint16_t i;
+            std::memcpy(&i, &v, 2);
+            i = __builtin_bswap16(i);
+            std::memcpy(&res, &i, 2);
+        } else if (sizeof(T) == 4) {
+            uint32_t i;
+            std::memcpy(&i, &v, 4);
+            i = __builtin_bswap32(i);
+            std::memcpy(&res, &i, 4);
+        } else if (sizeof(T) == 8) {
+            uint64_t i;
+            std::memcpy(&i, &v, 8);
+            i = __builtin_bswap64(i);
+            std::memcpy(&res, &i, 8);
+        } else if (sizeof(T) != 1) {
+            uint8_t *pv = (uint8_t *)&v, *pr = (uint8_t *)&res;
+            for (int i = 0; i < int(sizeof(T)); i++){
+                pr[i] = pv[sizeof(T)-1-i];
+            }
         }
-        return r;
+        return res;
     }
     /**
      * @brief Changes the Endiannes of the status struct. 
@@ -571,8 +592,8 @@ class ARS548Driver{
             switch (nbytes)
             {
             case STATUS_MESSAGE_PAYLOAD: {
-                struct UDPStatus status;
-                status = *((struct UDPStatus *)msgbuf);
+                std::memcpy(&in_status, msgbuf, sizeof(UDPStatus));
+                auto& status = in_status;
                 status.ServiceID=ChangeEndianness(status.ServiceID);
                 status.MethodID=ChangeEndianness(status.MethodID);
                 status.PayloadLength=ChangeEndianness(status.PayloadLength);
@@ -584,8 +605,8 @@ class ARS548Driver{
                 break;
             }
             case OBJECT_MESSAGE_PAYLOAD: {
-                struct Object_List object_List;
-                object_List=*((struct Object_List *)msgbuf);
+                std::memcpy(&in_object_List, msgbuf, sizeof(Object_List));
+                auto& object_List = in_object_List;
                 object_List.ServiceID=ChangeEndianness(object_List.ServiceID);
                 object_List.MethodID=ChangeEndianness(object_List.MethodID);
                 object_List.PayloadLength=ChangeEndianness(object_List.PayloadLength);
@@ -618,8 +639,8 @@ class ARS548Driver{
             }
             case DETECTION_MESSAGE_PAYLOAD: {
                 float posX, posY, posZ;
-                struct DetectionList detectionList;
-                detectionList=*((struct DetectionList *)msgbuf);
+                std::memcpy(&in_detectionList, msgbuf, sizeof(DetectionList));
+                auto& detectionList = in_detectionList;
                 detectionList.ServiceID=ChangeEndianness(detectionList.ServiceID);
                 detectionList.MethodID=ChangeEndianness(detectionList.MethodID);
                 detectionList.PayloadLength=ChangeEndianness(detectionList.PayloadLength);
