@@ -132,7 +132,7 @@ class ARS548Driver{
      * @param status The UDPStatus struct that is going to be modified.
      * @return UDPStatus The modified struct. 
      */
-    UDPStatus modifyStatus(UDPStatus status){
+    void modifyStatus(UDPStatus& status){
         status.Timestamp_Nanoseconds=ChangeEndianness(status.Timestamp_Nanoseconds);
         status.Timestamp_Seconds=ChangeEndianness(status.Timestamp_Seconds);
         status.Longitudinal=ChangeEndianness(status.Longitudinal);
@@ -147,7 +147,6 @@ class ARS548Driver{
         status.MaximumDistance=ChangeEndianness(status.MaximumDistance);
         status.SensorIPAddress_0=ChangeEndianness(status.SensorIPAddress_0);
         status.SensorIPAddress_1=ChangeEndianness(status.SensorIPAddress_1);
-        return status;
     }
     /**
      * @brief Changes the endiannes of the Object_List struct
@@ -468,7 +467,7 @@ class ARS548Driver{
         cloud_msg.height=POINTCLOUD_HEIGHT;
     }
     /**
-     * @brief Fills the PoseArray message. Used for visualization in Rviz2.
+     * @brief Fills the PoseArray message. Used for visualization in Rviz.
      *
      * @param cloud_Direction The PoseArray message to be filled.
      * @param object_List The Object_List struct used to fill the message.
@@ -494,9 +493,9 @@ class ARS548Driver{
     }
     public:
     /**
-     * @brief Reads the data received from the radar and sends it to the user and Rviz2.
+     * @brief Reads the data received from the radar and sends it to the user and Rviz.
      * 
-     * @param clock The ROS2 clock used to fill some of the fields of the messages.
+     * @param clock The ROS clock used to fill some of the fields of the messages.
      * @return The status of the connection. If it returns 1, there is an error in the execution.
      */
     int readData(){
@@ -568,7 +567,7 @@ class ARS548Driver{
             perror("setsockopt SO_RCVTIMEO failed");
         }
 
-        // FIX #6: use ros::ok() so the node stops cleanly on Ctrl+C / shutdown
+        // FIX: use ros::ok() so the node stops cleanly on Ctrl+C / shutdown
         while (ros::ok())
         {
             nbytes = recvfrom(
@@ -580,7 +579,7 @@ class ARS548Driver{
                 &addrlen
             );
 
-            // FIX #6: continue on transient errors instead of killing the node
+            // FIX: continue on transient errors instead of killing the node
             if(nbytes<0){
                 // Timeout
                 if (errno == EAGAIN || errno == EWOULDBLOCK) {
@@ -598,7 +597,7 @@ class ARS548Driver{
                 status.MethodID=ChangeEndianness(status.MethodID);
                 status.PayloadLength=ChangeEndianness(status.PayloadLength);
                 if(status.MethodID==STATUS_MESSAGE_METHOD_ID && status.PayloadLength==STATUS_MESSAGE_PDU_LENGTH){
-                    status=modifyStatus(status);
+                    modifyStatus(status);
                     fillStatusMessage(statusMessage,status);
                     statusPublisher.publish(statusMessage);
                 }
@@ -616,7 +615,7 @@ class ARS548Driver{
                         cloud_Direction.poses.resize(object_List.ObjectList_NumOfObjects);
                         fillMessageObject(objectMessage,object_List);
                         fillCloudMessage(cloud_msgObj);
-                        // FIX #7: iterators created HERE, after resize(), inside the correct case
+                        // FIX: iterators created HERE, after resize(), inside the correct case
                         sensor_msgs::PointCloud2Iterator<float> iter_x(cloud_msgObj,"x");
                         sensor_msgs::PointCloud2Iterator<float> iter_y(cloud_msgObj,"y");
                         sensor_msgs::PointCloud2Iterator<float> iter_z(cloud_msgObj,"z");
@@ -705,7 +704,7 @@ class ARS548Driver{
     /**
      * @brief  ars548_driver Node.
      */
-  ARS548Driver():modifierObject(cloud_msgObj),modifierDetection(cloud_msgDetect){
+  ARS548Driver():fd(-1),modifierObject(cloud_msgObj),modifierDetection(cloud_msgDetect){
     nh.reset(new ros::NodeHandle("~"));
 
     nh->param("radarIP",        ars548_IP,       static_cast<std::string>(DEFAULT_RADAR_IP));
