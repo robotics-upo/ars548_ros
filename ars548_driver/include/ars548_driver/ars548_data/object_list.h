@@ -13,7 +13,7 @@
 #define OBJECT_MESSAGE_PAYLOAD 9401
 
 
-#pragma pack(1)
+#pragma pack(push, 1)
 
 struct ObjectList{
     uint16_t ServiceID;
@@ -39,13 +39,15 @@ struct ObjectList{
 
     inline void changeEndianness();
 
-    inline ars548_messages::msg::ObjectList toMsg(const std::string &frame_ID, const rclcpp::Time &now, bool override_stamp = true);
+    inline void toMsg(ars548_messages::msg::ObjectList &objectMessage, const std::string &frame_ID, const rclcpp::Time &now, bool override_stamp = true);
 
     inline void fillObjectCloud(sensor_msgs::msg::PointCloud2 &cloud_msg, sensor_msgs::PointCloud2Modifier &modifierObject,
                                   const std::string &frame_id, const rclcpp::Time &now, bool override_stamp = true);
 
-    inline geometry_msgs::msg::PoseArray getDirectionMessage(const std::string &frame_id, const rclcpp::Time &now, bool override_stamp = true);
+    inline void fillDirectionMessage(geometry_msgs::msg::PoseArray &cloud_Direction, const std::string &frame_id, const rclcpp::Time &now, bool override_stamp = true);
 };
+
+#pragma pack(pop)
 
 inline void ObjectList::changeEndianness() {
     ServiceID = byteswap(ServiceID);
@@ -67,11 +69,7 @@ inline void ObjectList::changeEndianness() {
     }
 }
 
-#pragma pack(4)
-
-inline ars548_messages::msg::ObjectList ObjectList::toMsg(const std::string &frame_ID, const rclcpp::Time &now, bool override_stamp) {
-    ars548_messages::msg::ObjectList objectMessage;
-
+inline void ObjectList::toMsg(ars548_messages::msg::ObjectList &objectMessage, const std::string &frame_ID, const rclcpp::Time &now, bool override_stamp) {
     objectMessage.crc = CRC;
     objectMessage.length = Length;
     objectMessage.sqc = SQC;
@@ -86,13 +84,11 @@ inline ars548_messages::msg::ObjectList ObjectList::toMsg(const std::string &fra
     }
     objectMessage.objectlist_numofobjects = ObjectList_NumOfObjects;
 
-    for(u_int32_t i =0; i< ObjectList_NumOfObjects;++i) {
-        objectMessage.objectlist_objects[i] = ObjectList_Objects[i].toMsg();
+    for(uint32_t i = 0; i < ObjectList_NumOfObjects; ++i) {
+        ObjectList_Objects[i].toMsg(objectMessage.objectlist_objects[i]);
     }
 
-    objectMessage.objectlist_numofobjects = ObjectList_NumOfObjects;
     objectMessage.timestamp_syncstatus = Timestamp_SyncStatus;
-    
     objectMessage.header.frame_id = frame_ID;
     if (override_stamp) {
         objectMessage.header.stamp = now;
@@ -100,9 +96,6 @@ inline ars548_messages::msg::ObjectList ObjectList::toMsg(const std::string &fra
         objectMessage.header.stamp.sec = Timestamp_Seconds;
         objectMessage.header.stamp.nanosec = Timestamp_Nanoseconds;
     }
-
-    
-    return objectMessage;
 }
 
 inline void ObjectList::fillObjectCloud(sensor_msgs::msg::PointCloud2 &cloud_msg, sensor_msgs::PointCloud2Modifier &modifierObject,
@@ -133,7 +126,7 @@ inline void ObjectList::fillObjectCloud(sensor_msgs::msg::PointCloud2 &cloud_msg
     }
     modifierObject.resize(ObjectList_NumOfObjects);
 
-    for(u_int32_t i = 0; i < ObjectList_NumOfObjects;++i, ++iter_x, ++iter_y, ++iter_z,
+    for(uint32_t i = 0; i < ObjectList_NumOfObjects; ++i, ++iter_x, ++iter_y, ++iter_z,
                                                      ++iter_vx, ++iter_vy) {
         
         *iter_x = ObjectList_Objects[i].u_Position_X;
@@ -143,12 +136,9 @@ inline void ObjectList::fillObjectCloud(sensor_msgs::msg::PointCloud2 &cloud_msg
         *iter_vy = ObjectList_Objects[i].f_Dynamics_AbsVel_Y;
         
     }
-
-
 }
 
-inline geometry_msgs::msg::PoseArray ObjectList::getDirectionMessage(const std::string &frame_id, const rclcpp::Time &now, bool override_stamp){
-    geometry_msgs::msg::PoseArray cloud_Direction;
+inline void ObjectList::fillDirectionMessage(geometry_msgs::msg::PoseArray &cloud_Direction, const std::string &frame_id, const rclcpp::Time &now, bool override_stamp){
     tf2::Quaternion q;
     float yaw;
     cloud_Direction.header = std_msgs::msg::Header();
@@ -160,7 +150,7 @@ inline geometry_msgs::msg::PoseArray ObjectList::getDirectionMessage(const std::
         cloud_Direction.header.stamp.nanosec = Timestamp_Nanoseconds;
     }
     cloud_Direction.poses.resize(ObjectList_NumOfObjects);
-    for(u_int32_t i = 0; i < ObjectList_NumOfObjects; ++i) {
+    for(uint32_t i = 0; i < ObjectList_NumOfObjects; ++i) {
         cloud_Direction.poses[i].position.x = double(ObjectList_Objects[i].u_Position_X);
         cloud_Direction.poses[i].position.y = double(ObjectList_Objects[i].u_Position_Y);
         cloud_Direction.poses[i].position.z = double(ObjectList_Objects[i].u_Position_Z);
@@ -171,5 +161,4 @@ inline geometry_msgs::msg::PoseArray ObjectList::getDirectionMessage(const std::
         cloud_Direction.poses[i].orientation.z=q.z();
         cloud_Direction.poses[i].orientation.w=q.w();
     }
-    return cloud_Direction;
 }

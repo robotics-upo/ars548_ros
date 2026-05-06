@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <ars548_driver/util/byteswap.hpp>
 
-#pragma pack(1)
+#pragma pack(push, 1)
 
 struct VelocityVehicle
 {
@@ -21,7 +21,7 @@ struct VelocityVehicle
     inline void changeEndianness();
 };
 
-#pragma pack(4)
+#pragma pack(pop)
 
 inline void VelocityVehicle::changeEndianness() {
     ServiceID = byteswap(ServiceID);

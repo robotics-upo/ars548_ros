@@ -3,7 +3,7 @@
 #include "ars548_driver/util/byteswap.hpp"
 #include <cstdint>
 
-#pragma pack(1)
+#pragma pack(push, 1)
 
 struct CharacteristicSpeed
 {
@@ -18,7 +18,7 @@ struct CharacteristicSpeed
     inline void changeEndianness();
 };
 
-#pragma pack(4)
+#pragma pack(pop)
 
 void CharacteristicSpeed::changeEndianness() {
     ServiceID = byteswap(ServiceID);

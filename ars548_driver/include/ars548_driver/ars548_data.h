@@ -7,9 +7,8 @@
 #pragma once
 #include <cstdint>
 
-
-#pragma pack(1)
-
+// Each included file now uses #pragma pack(push, 1) / #pragma pack(pop) internally,
+// so no wrapping #pragma pack is needed here.
 
 #include "ars548_data/udp_status.h"
 #include "ars548_data/object_list.h"
@@ -26,7 +25,3 @@
 #include "ars548_data/steering_angle_front_axle.h"
 #include "ars548_data/velocity_vehicle.h"
 #include "ars548_data/yaw_rate.h"
-
-#pragma pack(4)
-
-

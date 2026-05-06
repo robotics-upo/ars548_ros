@@ -5,7 +5,7 @@
     <arg name="radarIP" default="10.13.1.113"/>
     <arg name="multicastIP" default="224.0.2.2"/>
     <arg name="radarPort" default="42102"/>
-    <node pkg="ars548_driver" exec="ars548_driver" name="radar" output="screen">
+    <node pkg="ars548_driver" exec="ars548_driver" name="radar" namespace="radar" output="screen">
         <param name="radarIP" value="$(var radarIP)"/>
         <param name="radarPort" value="$(var radarPort)"/>
         <param name="frameID" value="$(var frameID_Radar)"/>

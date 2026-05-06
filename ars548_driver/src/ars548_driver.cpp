@@ -3,6 +3,7 @@
  */
 
 #include "ars548_driver/ars548_driver.hpp"
+#include <cstring>
 
 using namespace std::chrono_literals;
 
@@ -172,35 +173,38 @@ void ars548_driver::receive_data_loop()
                     struct UDPStatus status;
                     if(status.receiveStatusMsg(nbytes, msgbuf))
                     {
-                        auto statusMessage = status.toMsg();
+                        ars548_messages::msg::Status statusMessage;
+                        status.toMsg(statusMessage);
                         statusPublisher->publish(statusMessage);
                     }
                 }
                 break;
             case OBJECT_MESSAGE_PAYLOAD:
                 {
-                    struct ObjectList object_list;
-                    // Ensure buffer size is sufficient before cast usually, but payload check helps
-                    object_list = *((struct ObjectList *)msgbuf);
-                    object_list.changeEndianness();
-                    if(object_list.isValid()) {
+                    std::memcpy(&object_list_, msgbuf, sizeof(ObjectList));
+                    object_list_.changeEndianness();
+                    if(object_list_.isValid()) {
                         auto now = this->now();
-                        objectsPublisher->publish(object_list.toMsg(frame_ID, now, override_stamp));
-                        object_list.fillObjectCloud(cloud_msgObj, modifierObject, frame_ID, now, override_stamp);
+                        ars548_messages::msg::ObjectList objectMessage;
+                        object_list_.toMsg(objectMessage, frame_ID, now, override_stamp);
+                        objectsPublisher->publish(objectMessage);
+                        object_list_.fillObjectCloud(cloud_msgObj, modifierObject, frame_ID, now, override_stamp);
                         objectsCloudPublisher->publish(cloud_msgObj);
-                        directionPublisher->publish(object_list.getDirectionMessage(frame_ID, now, override_stamp));
+                        object_list_.fillDirectionMessage(cloud_Direction, frame_ID, now, override_stamp);
+                        directionPublisher->publish(cloud_Direction);
                     }
                 }
                 break;
             case DETECTION_MESSAGE_PAYLOAD:
                 {
-                    struct DetectionList detection_list;
-                    detection_list = *((struct DetectionList *)msgbuf);
-                    detection_list.changeEndianness();
-                    if (detection_list.isValid()) {
+                    std::memcpy(&detection_list_, msgbuf, sizeof(DetectionList));
+                    detection_list_.changeEndianness();
+                    if (detection_list_.isValid()) {
                         auto now = this->now();
-                        detectionsPublisher->publish(detection_list.toMsg(frame_ID, now, override_stamp));
-                        detection_list.fillDetectionCloud(cloud_msgDetect, modifierDetection, frame_ID, now, override_stamp);
+                        ars548_messages::msg::DetectionList detectionMessage;
+                        detection_list_.toMsg(detectionMessage, frame_ID, now, override_stamp);
+                        detectionsPublisher->publish(detectionMessage);
+                        detection_list_.fillDetectionCloud(cloud_msgDetect, modifierDetection, frame_ID, now, override_stamp);
                         detectionsCloudPublisher->publish(cloud_msgDetect);
                     }
                 }

@@ -1,8 +1,9 @@
 #pragma once
 #include <cstdint>
 #include <ars548_driver/util/byteswap.hpp>
+#include <ars548_messages/msg/object.hpp>
 
-#pragma pack(1)
+#pragma pack(push, 1)
 
 struct Object{
     uint16_t u_StatusSensor;
@@ -71,10 +72,10 @@ struct Object{
     float u_Shape_Width_Edge_STD;
 
     inline void changeEndianness();
-    ars548_messages::msg::Object toMsg();
+    inline void toMsg(ars548_messages::msg::Object &o) const;
 };
 
-#pragma pack(4)
+#pragma pack(pop)
 
 inline void Object::changeEndianness() {
     u_StatusSensor = byteswap(u_StatusSensor);
@@ -122,9 +123,7 @@ inline void Object::changeEndianness() {
     u_Shape_Width_Edge_STD = byteswap(u_Shape_Width_Edge_STD);
 }
 
-inline ars548_messages::msg::Object Object::toMsg() {
-    ars548_messages::msg::Object o;
-
+inline void Object::toMsg(ars548_messages::msg::Object &o) const {
     o.u_statussensor = u_StatusSensor;
     o.u_id = u_ID;
     o.u_age = u_Age;
@@ -189,7 +188,5 @@ inline ars548_messages::msg::Object Object::toMsg() {
     o.f_dynamics_relvel_x_std = f_Dynamics_RelVel_X_STD;
     o.f_dynamics_relvel_y = f_Dynamics_RelVel_Y;
     o.f_dynamics_relvel_y_std = f_Dynamics_RelVel_Y_STD;  
-
-    return o;
+    o.u_position_reference = u_Position_Reference;
 }
-    

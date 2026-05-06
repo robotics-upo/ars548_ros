@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <ars548_driver/util/byteswap.hpp>
 
-#pragma pack(1)
+#pragma pack(push, 1)
 
 struct DrivingDirection
 {
@@ -19,7 +19,7 @@ struct DrivingDirection
     inline void changeEndianness();
 };
 
-#pragma pack(4)
+#pragma pack(pop)
 
 inline void DrivingDirection::changeEndianness() {
     ServiceID = byteswap(ServiceID);

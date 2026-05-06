@@ -12,11 +12,11 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <time.h>
-#include <errno.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <ctime>
+#include <cerrno>
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
 #include <thread>
 #include <atomic>
 
@@ -52,6 +52,10 @@ class ars548_driver : public rclcpp::Node{
     std::atomic<int> fd;
     char msgbuf[MSGBUFSIZE];
     
+    // Pre-allocated data structs to avoid ~45 KB on the stack per iteration
+    ObjectList object_list_;
+    DetectionList detection_list_;
+
     // Threading
     std::unique_ptr<std::thread> receive_thread_;
     std::atomic<bool> run_thread_;

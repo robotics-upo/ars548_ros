@@ -12,7 +12,7 @@
 #define ARS548_MINIMUM_DISTANCE_SLOT_1 190
 #define CONFIGURATION_PRECISION 0.001f
 
-#pragma pack(1)
+#pragma pack(push, 1)
 
 #ifndef NEW_IP
 #define NEW_IP "0.0.0.0"
@@ -59,7 +59,7 @@ struct SensorConfiguration
         PayloadLength = CONFIGURATION_PDU_LENGTH;
     }
 };
-#pragma pack(4)
+#pragma pack(pop)
 
 // @brief Changes the endianness of the data structure (uint8_t fields don't need to)
 inline void SensorConfiguration::changeEndianness() {
@@ -108,7 +108,7 @@ inline bool SensorConfiguration::isEqualToStatus(const UDPStatus &s) const {
         isEqual = false;
     if (!rough_eq(Width, s.Width, CONFIGURATION_PRECISION))
         isEqual = false;
-    if (!rough_eq(Height, s.Height))
+    if (!rough_eq(Height, s.Height, CONFIGURATION_PRECISION))
         isEqual = false;
     if (!rough_eq(Wheelbase, s.Wheelbase, CONFIGURATION_PRECISION))
         isEqual = false;
@@ -163,8 +163,8 @@ inline void SensorConfiguration::print() const
         std::cout<<"Center Frequency: HIGH\n";
         break;
     }
-    std::cout<<"Cycle Time: "<<CycleTime<<"\n";
-    std::cout<<"Cycle Offset: "<<(int)TimeSlot<<"\n";
+    std::cout<<"Cycle Time: "<<static_cast<int>(CycleTime)<<"\n";
+    std::cout<<"Cycle Offset: "<<static_cast<int>(TimeSlot)<<"\n";
     if(HCC == 1)
     {
         std::cout<<"Country Code: WORLDWIDE\n";

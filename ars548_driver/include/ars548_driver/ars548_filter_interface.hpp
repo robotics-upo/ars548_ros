@@ -1,3 +1,5 @@
+#pragma once
+
 #include "rclcpp/rclcpp.hpp"
 #include <sensor_msgs/point_cloud2_iterator.hpp> 
 #include "ars548_messages/msg/object_list.hpp"
@@ -24,10 +26,8 @@ protected:
   void fillCloudMessage(sensor_msgs::msg::PointCloud2 &cloud_msg){
     cloud_msg.header=std_msgs::msg::Header();
     cloud_msg.header.frame_id=this->frame_ID;
-    std::chrono::time_point<std::chrono::system_clock> now=std::chrono::system_clock::now();
-    auto duration=now.time_since_epoch();
-    cloud_msg.header.stamp.nanosec=std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count();
-    cloud_msg.header.stamp.sec=std::chrono::duration_cast<std::chrono::seconds>(duration).count();
+    // Use this->now() instead of manual timestamp calculation that overflows uint32_t
+    cloud_msg.header.stamp = this->now();
     cloud_msg.is_dense=false;
     cloud_msg.is_bigendian=false;
     cloud_msg.height=POINTCLOUD_HEIGHT;
@@ -88,9 +88,14 @@ public:
                                         "vy",1,sensor_msgs::msg::PointField::FLOAT32
                                         );
     modifierObject.reserve(SIZE);
-    pubObjFilter=create_publisher<sensor_msgs::msg::PointCloud2>("PointCloudObjectFiltered",10);
+    declare_parameter("input_topic", "ObjectList");
+    declare_parameter("output_topic", "PointCloudObjectFiltered");
+    auto input_topic = get_parameter("input_topic").as_string();
+    auto output_topic = get_parameter("output_topic").as_string();
+
+    pubObjFilter=create_publisher<sensor_msgs::msg::PointCloud2>(output_topic, 10);
     subscription_=create_subscription<ars548_messages::msg::ObjectList>
-      ("ObjectList",10,std::bind(&ARS548FilterInterface::topicCallback,this,_1));
+      (input_topic,10,std::bind(&ARS548FilterInterface::topicCallback,this,_1));
   }
     
 };

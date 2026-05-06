@@ -1,11 +1,9 @@
 #pragma once
 
-#pragma pack(1)
-
 #include "ars548_driver/util/byteswap.hpp"
 #include <cstdint>
 
-#pragma pack(1)
+#pragma pack(push, 1)
 
 struct AccelerationLongitudinalCoG
 {
@@ -24,7 +22,7 @@ struct AccelerationLongitudinalCoG
     inline void changeEndianness();
 };
 
-#pragma pack(4)
+#pragma pack(pop)
 
 inline void AccelerationLongitudinalCoG::changeEndianness() {
     ServiceID = byteswap(ServiceID);

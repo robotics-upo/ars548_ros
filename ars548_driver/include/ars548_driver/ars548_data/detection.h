@@ -3,7 +3,7 @@
 #include <ars548_driver/util/byteswap.hpp>
 #include <ars548_messages/msg/detection.hpp>
 
-#pragma pack(1)
+#pragma pack(push, 1)
 struct Detection{
     float f_AzimuthAngle;
     float f_AzimuthAngleSTD;
@@ -25,8 +25,9 @@ struct Detection{
 
     inline void changeEndianness();
 
-    inline ars548_messages::msg::Detection toMsg();
+    inline void toMsg(ars548_messages::msg::Detection &d) const;
 };
+#pragma pack(pop)
 
 inline void Detection::changeEndianness() {
     f_AzimuthAngle = byteswap(f_AzimuthAngle);
@@ -42,12 +43,7 @@ inline void Detection::changeEndianness() {
     u_SortIndex = byteswap(u_SortIndex);
 }
 
-
-#pragma pack(4)
-
-inline ars548_messages::msg::Detection Detection::toMsg() {
-    ars548_messages::msg::Detection d;
-
+inline void Detection::toMsg(ars548_messages::msg::Detection &d) const {
     d.f_azimuthangle = f_AzimuthAngle;
     d.f_azimuthanglestd = f_AzimuthAngleSTD;
     d.f_elevationangle = f_ElevationAngle;
@@ -65,6 +61,4 @@ inline ars548_messages::msg::Detection Detection::toMsg() {
     d.u_objectid = u_ObjectID;
     d.u_positivepredictivevalue = u_PositivePredictiveValue;
     d.u_sortindex = u_SortIndex;   
-
-    return d;
 }

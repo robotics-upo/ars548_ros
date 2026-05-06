@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstring>
 #include <ars548_driver/util/byteswap.hpp>
 #include "ars548_messages/msg/status.hpp"
 
@@ -7,7 +8,7 @@
 #define STATUS_MESSAGE_PAYLOAD 84
 #define STATUS_MESSAGE_PDU_LENGTH 76
 
-#pragma pack(1)
+#pragma pack(push, 1)
 
 struct UDPStatus {
     uint16_t ServiceID;
@@ -56,7 +57,7 @@ struct UDPStatus {
     }
 
     inline void changeEndianness();
-    inline ars548_messages::msg::Status toMsg();
+    inline void toMsg(ars548_messages::msg::Status &statusMessage) const;
     inline void print() const;
 
     /**
@@ -65,14 +66,15 @@ struct UDPStatus {
     inline bool receiveStatusMsg(int nbytes,const char * buffer){
         if(nbytes == STATUS_MESSAGE_PAYLOAD)
         {
-            *this = *((struct UDPStatus *)buffer);
+            std::memcpy(this, buffer, sizeof(UDPStatus));
             changeEndianness();
             return isValid();
         }
         return false;
     }
 };
-#pragma pack(4)
+#pragma pack(pop)
+
 /**
  * @brief Changes the Endiannes of the status struct.  (uint8_t fields don't need to)
  * 
@@ -101,11 +103,9 @@ inline void UDPStatus::changeEndianness(){
  * @brief Fills the Status Messsage.
  * 
  * @param statusMessage The Status message to be filled.
- * @param status The Status struct used to fill the message.
  * 
  */
-inline ars548_messages::msg::Status UDPStatus::toMsg() {
-    ars548_messages::msg::Status statusMessage;
+inline void UDPStatus::toMsg(ars548_messages::msg::Status &statusMessage) const {
     statusMessage.cycletime = CycleTime;
     statusMessage.configurationcounter = ConfigurationCounter;
     statusMessage.frequencyslot = FrequencySlot;
@@ -142,8 +142,6 @@ inline ars548_messages::msg::Status UDPStatus::toMsg() {
     statusMessage.wheelbase = Wheelbase;
     statusMessage.width = Width;
     statusMessage.yaw = Yaw;
-
-    return statusMessage;
 }
 
 inline void UDPStatus::print() const
@@ -178,8 +176,9 @@ inline void UDPStatus::print() const
         std::cout<<"Center Frequency: HIGH\n";
         break;
     }
-    std::cout<<"Cycle Time: "<<CycleTime<<"\n";
-    std::cout<<"Cycle Offset: "<<(int)TimeSlot<<"\n";
+    // Fix #13: Cast uint8_t to int so it prints as a number, not an ASCII character
+    std::cout<<"Cycle Time: "<<static_cast<int>(CycleTime)<<"\n";
+    std::cout<<"Cycle Offset: "<<static_cast<int>(TimeSlot)<<"\n";
     if(HCC==1)
     {
         std::cout<<"Country Code: WORLDWIDE\n";

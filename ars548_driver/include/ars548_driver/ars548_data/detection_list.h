@@ -2,10 +2,11 @@
 
 #include "detection.h"
 #include <cstdint>
+#include <cmath>
 #include <ars548_driver/util/byteswap.hpp>
 #include <ars548_messages/msg/detection_list.hpp>
 
-#pragma pack(1)
+#pragma pack(push, 1)
 
 #define ARS548_MAX_DETECTIONS 800
 #define DETECTION_MESSAGE_METHOD_ID 336
@@ -16,7 +17,7 @@ struct DetectionList{
     uint16_t ServiceID;
     uint16_t MethodID;
     uint32_t PayloadLength;
-    int64_t empty1;//Because the data starts at bit 71
+    uint64_t empty1; // Data starts at bit 71
     uint64_t CRC;
     uint32_t Length;
     uint32_t SQC;
@@ -55,11 +56,13 @@ struct DetectionList{
 
     inline void changeEndianness();
 
-    inline ars548_messages::msg::DetectionList toMsg(const std::string &frame_ID, const rclcpp::Time &now, bool override_stamp = true);
+    inline void toMsg(ars548_messages::msg::DetectionList &detectionMessage, const std::string &frame_ID, const rclcpp::Time &now, bool override_stamp = true);
 
     inline void fillDetectionCloud(sensor_msgs::msg::PointCloud2 &cloud_msg, sensor_msgs::PointCloud2Modifier &modifierDetection,
                                   const std::string &frame_id, const rclcpp::Time &now, bool override_stamp = true);
 };
+
+#pragma pack(pop)
 
 /**
      * @brief Changes the endianness of the DetectionList struct.
@@ -95,17 +98,18 @@ inline void DetectionList::changeEndianness() {
     List_RadVelDomain_Max = byteswap(List_RadVelDomain_Max);
     Aln_AzimuthCorrection = byteswap(Aln_AzimuthCorrection);
     Aln_ElevationCorrection = byteswap(Aln_ElevationCorrection);
-    for(uint64_t i=0; i<List_NumOfDetections;i++){
+
+    // Validate List_NumOfDetections before iterating to prevent buffer overflow
+    if (List_NumOfDetections > ARS548_MAX_DETECTIONS) {
+        List_NumOfDetections = ARS548_MAX_DETECTIONS;
+    }
+    for(uint32_t i = 0; i < List_NumOfDetections; i++){
         //Setting the detection data to littleEndian
         List_Detections[i].changeEndianness();        
     }
 }
 
-#pragma pack(4)
-
-inline ars548_messages::msg::DetectionList DetectionList::toMsg(const std::string &frame_ID, const rclcpp::Time &now, bool override_stamp) {
-    ars548_messages::msg::DetectionList detectionMessage;
-
+inline void DetectionList::toMsg(ars548_messages::msg::DetectionList &detectionMessage, const std::string &frame_ID, const rclcpp::Time &now, bool override_stamp) {
     detectionMessage.header.frame_id = frame_ID;
     if (override_stamp) {
         detectionMessage.header.stamp = now;
@@ -142,11 +146,9 @@ inline ars548_messages::msg::DetectionList DetectionList::toMsg(const std::strin
     }
     detectionMessage.list_numofdetections = List_NumOfDetections;
 
-    for(uint32_t i=0; i < List_NumOfDetections;i++) {
-        detectionMessage.list_detections[i] = List_Detections[i].toMsg();
+    for(uint32_t i = 0; i < List_NumOfDetections; i++) {
+        List_Detections[i].toMsg(detectionMessage.list_detections[i]);
     }
-
-    return detectionMessage;
 }
 
 /**
@@ -157,18 +159,20 @@ inline ars548_messages::msg::DetectionList DetectionList::toMsg(const std::strin
 #define DETECTION_LIST_POINTCLOUD_HEIGHT 1
 inline void DetectionList::fillDetectionCloud(sensor_msgs::msg::PointCloud2 &cloud_msg, sensor_msgs::PointCloud2Modifier &modifierDetection, 
                                            const std::string &frame_id, const rclcpp::Time &now, bool override_stamp) {
-    cloud_msg.header=std_msgs::msg::Header();
+    cloud_msg.header = std_msgs::msg::Header();
     cloud_msg.header.frame_id = frame_id;
-    modifierDetection.resize(static_cast<size_t>(List_NumOfDetections));
     if (override_stamp) {
         cloud_msg.header.stamp = now;
     } else {
         cloud_msg.header.stamp.sec = Timestamp_Seconds;
         cloud_msg.header.stamp.nanosec = Timestamp_Nanoseconds;
     }
-    cloud_msg.is_dense=false;
-    cloud_msg.is_bigendian=false;
+    cloud_msg.is_dense = false;
+    cloud_msg.is_bigendian = false;
     cloud_msg.height = DETECTION_LIST_POINTCLOUD_HEIGHT;
+
+    // Single iteration — allocate for max, then shrink to actual valid count
+    modifierDetection.resize(static_cast<size_t>(List_NumOfDetections));
 
     sensor_msgs::PointCloud2Iterator<float> iter_xD(cloud_msg,"x");
     sensor_msgs::PointCloud2Iterator<float> iter_yD(cloud_msg,"y");
@@ -179,21 +183,35 @@ inline void DetectionList::fillDetectionCloud(sensor_msgs::msg::PointCloud2 &clo
     sensor_msgs::PointCloud2Iterator<float> iter_azimuthD(cloud_msg, "azimuth");
     sensor_msgs::PointCloud2Iterator<float> iter_elevationD(cloud_msg,"elevation");
 
-    for(uint32_t i = 0; i < List_NumOfDetections;i++,++iter_xD,++iter_yD,++iter_zD,
-                                                                ++iter_vD, ++iter_rD, ++iter_RCSD,
-                                                                ++iter_azimuthD, ++iter_elevationD){
-        auto posX = List_Detections[i].f_Range*float(std::cos(List_Detections[i].f_ElevationAngle))*float(std::cos(List_Detections[i].f_AzimuthAngle));
-        auto posY = List_Detections[i].f_Range*float(std::cos(List_Detections[i].f_ElevationAngle))*float(std::sin(List_Detections[i].f_AzimuthAngle));
-        auto posZ = List_Detections[i].f_Range*float(std::sin(List_Detections[i].f_ElevationAngle));
+    uint32_t valid_points = 0;
+    for(uint32_t i = 0; i < List_NumOfDetections; i++){
+        const auto& detection = List_Detections[i];
+        if (detection.u_InvalidFlags != 0) {
+            continue;
+        }
+
+        // Use sincosf to compute sin and cos together
+        float cos_elev, sin_elev, cos_azi, sin_azi;
+        sincosf(detection.f_ElevationAngle, &sin_elev, &cos_elev);
+        sincosf(detection.f_AzimuthAngle,  &sin_azi,  &cos_azi);
+
+        auto posX = detection.f_Range * cos_elev * cos_azi;
+        auto posY = detection.f_Range * cos_elev * sin_azi;
+        auto posZ = detection.f_Range * sin_elev;
         RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"),"Detection position \n x: %f\n y: %f\n z:%f.", posX, posY, posZ);
         *iter_xD = posX;
         *iter_yD = posY;
         *iter_zD = posZ;
-        *iter_rD = List_Detections[i].f_Range;
-        *iter_vD = List_Detections[i].f_RangeRate;
-        *iter_RCSD = List_Detections[i].s_RCS;
-        *iter_azimuthD = List_Detections[i].f_AzimuthAngle;
-        *iter_elevationD = List_Detections[i].f_ElevationAngle;
+        *iter_rD = detection.f_Range;
+        *iter_vD = detection.f_RangeRate;
+        *iter_RCSD = detection.s_RCS;
+        *iter_azimuthD = detection.f_AzimuthAngle;
+        *iter_elevationD = detection.f_ElevationAngle;
+
+        ++iter_xD; ++iter_yD; ++iter_zD; ++iter_vD; ++iter_rD; ++iter_RCSD; ++iter_azimuthD; ++iter_elevationD;
+        valid_points++;
     }
+
+    // Shrink to actual valid count after single pass
+    modifierDetection.resize(static_cast<size_t>(valid_points));
 }
-    
