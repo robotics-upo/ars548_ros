@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <ars548_driver/util/byteswap.hpp>
+#include <ars548_messages/msg/object.hpp>
 
 #pragma pack(1)
 
@@ -126,6 +127,7 @@ ars548_messages::msg::Object Object::toMsg() {
     o.u_id = u_ID;
     o.u_age = u_Age;
     o.u_position_invalidflags = u_Position_InvalidFlags;
+    o.u_position_reference = u_Position_Reference;
     o.u_position_x = u_Position_X;
     o.u_position_x_std = u_Position_X_STD;
     o.u_position_y = u_Position_Y;
