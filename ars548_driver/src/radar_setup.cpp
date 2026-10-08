@@ -16,7 +16,8 @@
 #include "tclap/CmdLine.h"
 #include "ars548_driver/ars548_driver.hpp"
 #include "ars548_driver/ars548_data.h"
-#include <stdfloat>
+#include <cmath>    // std::float_t
+#include <cstdint>  // std::uint8_t, std::uint16_t
 
 // Default values, can be overridden by arguments
 #define DEFAULT_RADAR_INTERFACE "10.13.1.166"

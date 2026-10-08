@@ -114,6 +114,11 @@ inline ars548_messages::msg::DetectionList DetectionList::toMsg(const std::strin
         detectionMessage.header.stamp.nanosec = Timestamp_Nanoseconds;
     }
     detectionMessage.aln_status = Aln_Status;
+    detectionMessage.aln_azimuthcorrection = Aln_AzimuthCorrection;
+    detectionMessage.aln_elevationcorrection = Aln_ElevationCorrection;
+    detectionMessage.list_invalidflags = List_InvalidFlags;
+    detectionMessage.list_radveldomain_min = List_RadVelDomain_Min;
+    detectionMessage.list_radveldomain_max = List_RadVelDomain_Max;
     detectionMessage.crc = CRC;
     detectionMessage.dataid = DataID;
     detectionMessage.eventdataqualifier = EventDataQualifier;
