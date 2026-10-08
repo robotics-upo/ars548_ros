@@ -56,6 +56,10 @@ if(BUILD_TESTING)
   # a copyright and license is added to all source files
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
+
+  find_package(ament_cmake_gtest REQUIRED)
+  ament_add_gtest(test_ars548_data test/test_ars548_data.cpp)
+  ament_target_dependencies(test_ars548_data rclcpp ars548_messages sensor_msgs tf2_geometry_msgs)
 endif()
 
 ament_package()

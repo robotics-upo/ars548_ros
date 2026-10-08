@@ -128,6 +128,7 @@ inline void Object::toMsg(ars548_messages::msg::Object &o) const {
     o.u_id = u_ID;
     o.u_age = u_Age;
     o.u_position_invalidflags = u_Position_InvalidFlags;
+    o.u_position_reference = u_Position_Reference;
     o.u_position_x = u_Position_X;
     o.u_position_x_std = u_Position_X_STD;
     o.u_position_y = u_Position_Y;

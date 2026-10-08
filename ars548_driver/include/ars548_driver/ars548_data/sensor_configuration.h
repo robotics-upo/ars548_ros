@@ -1,4 +1,5 @@
 #pragma once
+#include <arpa/inet.h>
 #include "ars548_driver/util/byteswap.hpp"
 #include "ars548_driver/util/rough_equal.hpp"
 #include "udp_status.h"

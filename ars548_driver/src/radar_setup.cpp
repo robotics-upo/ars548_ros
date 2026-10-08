@@ -21,7 +21,8 @@
 #ifndef MSGBUFSIZE
 #define MSGBUFSIZE 102400
 #endif
-#include <stdfloat>
+#include <cmath>    // std::float_t
+#include <cstdint>  // std::uint8_t, std::uint16_t
 
 // Default values, can be overridden by arguments
 #define DEFAULT_RADAR_INTERFACE "10.13.1.166"
