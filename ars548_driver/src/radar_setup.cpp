@@ -15,11 +15,8 @@
 #include "tclap/CmdLine.h"
 #include "ars548_driver/ars548_driver.hpp"
 #include "ars548_driver/ars548_data.h"
-<<<<<<< HEAD
-=======
 #include <cmath>    // std::float_t
 #include <cstdint>  // std::uint8_t, std::uint16_t
->>>>>>> f8cb500 (Copy missing DetectionList/Object fields into ROS messages, drop <stdfloat>)
 
 #define RADAR_INTERFACE "10.13.1.166"
 #define CONFIGURATION_SOURCE_PORT 42401
